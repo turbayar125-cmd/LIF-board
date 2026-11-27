@@ -133,6 +133,30 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .big-grid .tl .nm{font-size:1.05rem}
 .view .add{display:none}
 
+/* Excel загварын хүснэгт */
+.eg2{width:100%;border-collapse:collapse;table-layout:fixed}
+.eg2 col.ckc{width:2.3rem}
+.eg2 th{position:sticky;top:0;z-index:2;background:#fbf8ef;font-size:.95rem;padding:.4rem .3rem;border:1px solid var(--line2);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eg2 th small{font-weight:600;color:var(--mut);font-size:.72rem}
+.eg2 th.today{background:var(--y)} .eg2 th.today small{color:var(--ink)}
+.eg2 tr.band td{background:#f6f1e1;text-align:center;font-weight:800;font-size:.92rem;padding:.22rem .4rem;border:1px solid var(--line2);position:relative}
+.eg2 tr.band .code{display:inline-block;font-size:.7rem;font-weight:800;color:#fff;border-radius:.3rem;padding:.05rem .35rem;margin-right:.45rem;vertical-align:.08rem}
+.rowadd{position:relative;float:right;font-size:.75rem;font-weight:700;padding:.1rem .5rem;border-radius:.3rem;background:#fff;border:1px solid var(--line2);margin-left:.3rem}
+.eg2 td.nm,.eg2 td.ck{border:1px solid var(--line2);padding:0;height:2.9rem;background:#fff}
+.eg2 td.today{background:#fffbea}
+.slotb{width:100%;height:100%;display:flex;align-items:center;gap:.3rem;padding:0 .4rem;text-align:left;font-weight:700;font-size:.92rem;min-height:2.9rem}
+.slotb .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.slotb .nt{color:var(--mut);font-size:.8rem}
+.slotb.blank .plus{margin:auto;color:#cfc5a8;font-size:1.3rem;font-weight:800}
+.view .slotb.blank .plus{display:none}
+.eg2 td.ck{display:table-cell}
+.ckb{display:block;width:100%;height:50%;min-height:1.45rem;font-weight:900;font-size:1.05rem;line-height:1;border-bottom:1px solid var(--line)}
+.ckb:last-child{border-bottom:0}
+.ckb.ok{background:var(--okbg);color:var(--ok)} .ckb.miss{background:var(--badbg);color:var(--bad)}
+.big-grid .eg2 td.nm,.big-grid .eg2 td.ck{height:4rem} .big-grid .slotb{font-size:1.15rem;min-height:4rem} .big-grid .ckb{font-size:1.35rem;min-height:2rem}
+.big-grid .eg2 col.ckc{width:3rem} .big-grid .eg2 th{font-size:1.1rem} .big-grid .eg2 tr.band td{font-size:1.05rem}
+
+.dash .eg2 td.nm,.dash .eg2 td.ck{height:2.5rem} .dash .slotb{min-height:2.5rem;font-size:.85rem;padding:0 .3rem} .dash .ckb{min-height:1.25rem;font-size:.9rem} .dash .eg2 col.ckc{width:1.9rem}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -216,7 +240,7 @@ textarea.inp{height:auto;padding:.6rem .8rem}
 .row{display:flex;gap:.6rem;align-items:center}
 .set-sec{background:#fff;border:1px solid var(--line);border-radius:.7rem;padding:1rem;margin-bottom:.8rem}
 .set-sec h3{margin:0 0 .7rem;font-size:1.15rem}
-.typerow{display:grid;grid-template-columns:7rem 1fr 4rem auto;gap:.5rem;align-items:center;margin-bottom:.4rem}
+.typerow{display:grid;grid-template-columns:7rem 1fr 4rem 5rem 7rem;gap:.5rem;align-items:center;margin-bottom:.4rem}
 .typerow input[type=color]{width:4rem;height:2.8rem;border:1px solid var(--line2);border-radius:.5rem;padding:.15rem;background:#fff}
 .note{font-size:.9rem;color:var(--mut);line-height:1.45}
 code{background:#f4f0e3;padding:.1rem .35rem;border-radius:.3rem;font-size:.9em}
@@ -292,7 +316,7 @@ const ST_NEXT = { ok:'miss', miss:'plan', plan:'ok' };
 
 /* ================= defaults ================= */
 const DEFAULT_TYPES = [
-  { code:'SI',   name:'Safety Interaction',           color:'#2563eb' },
+  { code:'SI',   name:'Safety Interaction',           color:'#2563eb', slots:2 },
   { code:'CP',   name:'Coach / Peer',                 color:'#7c3aed' },
   { code:'TP',   name:'Trainee / Peer',               color:'#0891b2' },
   { code:'CRM',  name:'Critical Risk Management',     color:'#dc2626' },
@@ -339,7 +363,7 @@ function commit(key, {noRender} = {}){
   queuePush();
   if(!noRender) render();
 }
-const settings = () => { const s = getDoc('settings', defSettings); if(!s.types) s.types = DEFAULT_TYPES.map(t=>({...t})); if(!s.leaders) s.leaders=[]; if(!s.extraPeople) s.extraPeople=[]; return s; };
+const settings = () => { const s = getDoc('settings', defSettings); if(!s.types) s.types = DEFAULT_TYPES.map(t=>({...t})); if(!s.leaders) s.leaders=[]; if(!s.extraPeople) s.extraPeople=[]; if(!s._v2){ s.types.forEach(t => { if(t.slots === undefined) t.slots = t.code === 'SI' ? 2 : 1; }); s._v2 = 1; } return s; };
 
 /* ================= week / month keys ================= */
 function weekStartDate(d){ const ws = settings().weekStart ?? 6; const diff = (d.getDay() - ws + 7) % 7; const x = addDays(d, -diff); x.setHours(0,0,0,0); return x; }
@@ -458,15 +482,22 @@ function avatar(p, cls=''){
 /* ================= stats ================= */
 function weekStats(w){
   let ok=0, miss=0, plan=0; const names = new Set(); const perName = {};
+  const c1 = {g:0,r:0}, c2 = {g:0,r:0};
   for(const t of Object.values(w.grid||{})) for(const arr of Object.values(t)) for(const e of arr){
+    if(!e || !e.name) continue;
+    e.st = slotSt(e);
+    if(e.a==='ok') c1.g++; else if(e.a==='miss') c1.r++;
+    if(e.b==='ok') c2.g++; else if(e.b==='miss') c2.r++;
     if(e.st==='ok') ok++; else if(e.st==='miss') miss++; else plan++;
     if(e.st!=='plan'){ names.add(e.name); }
     perName[e.name] = perName[e.name] || {ok:0,miss:0,plan:0,codes:new Set()};
     perName[e.name][e.st]++;
   }
-  for(const [code,t] of Object.entries(w.grid||{})) for(const arr of Object.values(t)) for(const e of arr) perName[e.name].codes.add(code);
-  return { ok, miss, plan, people:names.size, perName, rate: ok+miss ? Math.round(ok*100/(ok+miss)) : null };
+  for(const [code,t] of Object.entries(w.grid||{})) for(const arr of Object.values(t)) for(const e of arr) if(e && e.name) perName[e.name].codes.add(code);
+  return { c1, c2, ok, miss, plan, people:names.size, perName, rate: ok+miss ? Math.round(ok*100/(ok+miss)) : null };
 }
+// хуучин {st} → шинэ {a,b}
+function slotSt(e){ if(e.a===undefined && e.b===undefined){ e.a = e.st==='ok'?'ok':e.st==='miss'?'miss':''; e.b=''; } return (e.a==='miss'||e.b==='miss') ? 'miss' : (e.a==='ok'||e.b==='ok') ? 'ok' : 'plan'; }
 function calCount(obj){ let g=0,r=0; for(const v of Object.values(obj||{})){ if(v==='g') g++; else if(v==='r') r++; } return {g,r}; }
 
 /* ================= render: chrome ================= */
@@ -508,18 +539,32 @@ function calHTML(kind, big){
 }
 function calBadge(kind){ const c = calCount(curMonth()[kind]); return `<span class="chip-s"><span style="color:var(--ok)">${c.g} G</span> / <span style="color:var(--bad)">${c.r} R</span></span>`; }
 
+function rowsFor(w, t){
+  const g = w.grid[t.code] || {}; let n = Math.max(1, +t.slots || 1, (w.rows||{})[t.code] || 0);
+  for(const arr of Object.values(g)) n = Math.max(n, (arr||[]).length);
+  return n;
+}
 function gridHTML(){
   const st = settings(), w = curWeek(), ds = weekDays(S.date), today = ymd(new Date());
-  let h = `<table class="eg"><colgroup><col style="width:11.5rem">${ds.map(()=>'<col>').join('')}</colgroup><thead><tr><th>Төрөл</th>`;
-  h += ds.map(d => `<th class="${ymd(d)===today?'today':''}">${DOWL[d.getDay()]}<small>${d.getMonth()+1}/${d.getDate()}</small></th>`).join('');
+  const DEN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  let h = `<table class="eg2"><colgroup>${ds.map(()=>'<col><col class="ckc">').join('')}</colgroup><thead><tr>`;
+  h += ds.map(d => `<th colspan="2" class="${ymd(d)===today?'today':''}">${DOWL[d.getDay()]} <small>${S.tab==='dash'?'':DEN[d.getDay()]+' · '}${d.getMonth()+1}/${d.getDate()}</small></th>`).join('');
   h += '</tr></thead><tbody>';
   for(const t of st.types){
-    h += `<tr><td class="tl"><span class="code" style="background:${esc(t.color)}">${esc(t.code)}</span><div class="nm">${esc(t.name)}</div></td>`;
-    ds.forEach((d,i) => {
-      const arr = (w.grid[t.code]||{})[i] || [];
-      h += `<td class="${ymd(d)===today?'today':''}"><div class="cell">${arr.map(e => `<button class="pc ${e.st}" data-chip="${esc(t.code)}|${i}|${e.id}" title="${esc(e.name)}"><span class="st">${ICON[e.st]}</span><span class="tx">${esc(e.name)}</span></button>`).join('')}<button class="add" data-add="${esc(t.code)}|${i}" aria-label="Нэмэх">+</button></div></td>`;
-    });
-    h += '</tr>';
+    const n = rowsFor(w, t);
+    h += `<tr class="band"><td colspan="14"><span class="code" style="background:${esc(t.color)}">${esc(t.code)}</span>${esc(t.name)}${S.edit?`<button class="rowadd" data-rowadd="${esc(t.code)}" title="Энэ долоо хоногт мөр нэмэх">+ мөр</button>${n > Math.max(1,+t.slots||1) ? `<button class="rowadd" data-rowdel="${esc(t.code)}" title="Сүүлийн хоосон мөрийг хасах">− мөр</button>`:''}`:''}</td></tr>`;
+    for(let r=0; r<n; r++){
+      h += '<tr class="slot">';
+      ds.forEach((d,i) => {
+        const e = ((w.grid[t.code]||{})[i]||[])[r]; const td = ymd(d)===today ? ' today' : '';
+        const ref = `${esc(t.code)}|${i}|${r}`;
+        if(e && e.name) slotSt(e);
+        const pp = e && e.name ? personByName(e.name) : null;
+        h += `<td class="nm${td}"><button class="slotb ${e&&e.name?'':'blank'}" data-slot="${ref}">${e && e.name ? `${pp?.photo?`<img class="av sm" src="${esc(pp.photo)}" alt="">`:''}<span class="tx">${esc(e.name)}</span>${e.note?'<span class="nt" title="Тэмдэглэлтэй">✎</span>':''}` : (S.edit?'<span class="plus">+</span>':'')}</button></td>`;
+        h += `<td class="ck${td}"><button class="ckb ${e?.a||''}" data-ck="${ref}|a" aria-label="1-р тэмдэглэгээ">${e?.a==='ok'?'✓':e?.a==='miss'?'✗':''}</button><button class="ckb ${e?.b||''}" data-ck="${ref}|b" aria-label="2-р тэмдэглэгээ">${e?.b==='ok'?'✓':e?.b==='miss'?'✗':''}</button></td>`;
+      });
+      h += '</tr>';
+    }
   }
   return h + '</tbody></table>';
 }
@@ -584,7 +629,7 @@ function viewDash(){
       <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {more:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {more:'qual'})}</div>
       ${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'grow', more:'people'})}
     </div>
-    <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridHTML(), {cls:'grow', more:'grid', right:`<span class="chip-s">✓ ${st.ok} · ✗ ${st.miss} · ○ ${st.plan}</span>`})}</div>
+    <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridHTML(), {cls:'grow', more:'grid', right:`<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
     <div class="colR">
       <div class="rtop">
         ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {more:'sched'})}
@@ -603,7 +648,7 @@ function viewCal(kind, num, title){
 }
 function viewGrid(){
   const st = weekStats(curWeek());
-  return `<div class="big-grid full">${panel('4', 'Мэдээлэл — Leadership in the Field engagements', gridHTML(), {cls:'full', right:`<span class="chip-s">✓ ${st.ok} хийсэн · ✗ ${st.miss} хийгээгүй · ○ ${st.plan} төлөвлөсөн</span><span class="note" style="margin-left:.6rem">${S.edit?'Нэр дээр дарж төлөв солих · + дарж нэмэх':''}</span>`})}</div>`;
+  return `<div class="big-grid full">${panel('4', 'Мэдээлэл — Leadership in the Field engagements', gridHTML(), {cls:'full', right:`<span class="chip-s">1-р: ${st.c1.g} ✓ / ${st.c1.r} ✗ · 2-р: ${st.c2.g} ✓ / ${st.c2.r} ✗ · ${st.ok+st.miss+st.plan} хүн</span><span class="note" style="margin-left:.6rem">${S.edit?'Нүдэнд дарж нэр сонгох · жижиг нүд: хоосон → ✓ → ✗':''}</span>`})}</div>`;
 }
 function viewMeet(){
   return `<div class="two" style="grid-template-columns:1fr 2fr">${panel('3','Хурал хийх хүмүүс', meetingPeopleHTML(true) + `<p class="note">Энэ долоо хоногт хурал / ярилцлага хийх хүмүүс. “+” дарж жагсаалтаас нэмнэ.</p>`, {cls:'full'})}
@@ -666,7 +711,8 @@ function viewSet(){
       <div class="cell" style="gap:.4rem">${s.leaders.map(n=>`<button class="pc ok" data-lrm="${esc(n)}"><span class="tx">${esc(n)}</span> <span class="st" style="color:var(--mut)">×</span></button>`).join('')}<button class="btn" data-ladd="1">+ Нэмэх</button></div>
     </div>
     <div class="set-sec"><h3>Engagement төрлүүд</h3>
-      ${s.types.map((t,i)=>`<div class="typerow"><input class="inp" data-tcode="${i}" value="${esc(t.code)}" maxlength="6"><input class="inp" data-tname="${i}" value="${esc(t.name)}"><input type="color" data-tcolor="${i}" value="${esc(t.color)}"><button class="btn danger" data-tdel="${i}">Устгах</button></div>`).join('')}
+      <div class="typerow note" style="margin-bottom:.2rem"><span>Код</span><span>Нэр</span><span>Өнгө</span><span>Мөр</span><span></span></div>
+      ${s.types.map((t,i)=>`<div class="typerow"><input class="inp" data-tcode="${i}" value="${esc(t.code)}" maxlength="6"><input class="inp" data-tname="${i}" value="${esc(t.name)}"><input type="color" data-tcolor="${i}" value="${esc(t.color)}"><input class="inp" type="number" min="1" max="10" data-tslots="${i}" value="${+t.slots||1}"><button class="btn danger" data-tdel="${i}">Устгах</button></div>`).join('')}
       <button class="btn" id="tAdd">+ Төрөл нэмэх</button>
       <p class="note">Код нь Field Map дээрх тэмдэг болно. Кодыг солиход өмнө бичсэн мэдээлэл тухайн код дээрээ үлдэнэ.</p>
     </div>
@@ -800,17 +846,24 @@ function pickPerson({title, onPick, withStatus, multi}){
   $('#pkBody').addEventListener('click', e => { const b = e.target.closest('[data-pp]'); if(b) choose(b.dataset.pp); });
 }
 
-function chipMenu(code, day, id){
-  const w = curWeek(), arr = w.grid[code][day], e = arr.find(x=>x.id===id); if(!e) return;
+function slotMenu(code, day, r){
+  const w = curWeek(), arr = (w.grid[code]||{})[day]||[], e = arr[r]; if(!e || !e.name) return;
   const t = settings().types.find(x=>x.code===code);
   openModal(`<div class="mh"><h2>${esc(e.name)}</h2><button class="x" data-close="1">×</button></div>
     <div class="mb"><p class="note">${esc(t?.name||code)} · ${DOWL[weekDays(S.date)[day].getDay()]}</p>
-    <div class="seg" id="cmSt" style="font-size:1.15rem">${['ok','plan','miss'].map(s=>`<button data-st="${s}" class="${e.st===s?'on':''}">${{ok:'✓ Хийсэн',plan:'○ Төлөвлөсөн',miss:'✗ Хийгээгүй'}[s]}</button>`).join('')}</div>
-    <div class="fld" style="margin-top:1rem"><label>Тэмдэглэл</label><input class="inp" id="cmNote" value="${esc(e.note||'')}" placeholder="Сонголттой"></div></div>
-    <div class="mf"><button class="btn danger" id="cmDel">Устгах</button><span class="sp" style="flex:1"></span><button class="btn pri" id="cmOk">Хадгалах</button></div>`, 'sm');
-  $('#cmSt').addEventListener('click', ev => { const b = ev.target.closest('[data-st]'); if(!b) return; e.st = b.dataset.st; [...$('#cmSt').children].forEach(x=>x.classList.toggle('on', x===b)); });
-  $('#cmDel').onclick = () => { arr.splice(arr.indexOf(e),1); closeModal(); commit(wkey()); };
-  $('#cmOk').onclick = () => { e.note = $('#cmNote').value.trim(); closeModal(); commit(wkey()); };
+    <div class="fld"><label>Тэмдэглэл</label><input class="inp" id="smNote" value="${esc(e.note||'')}" placeholder="Сонголттой"></div></div>
+    <div class="mf"><button class="btn danger" id="smDel">Нүдийг цэвэрлэх</button><button class="btn" id="smChg">Хүн солих</button><span style="flex:1"></span><button class="btn pri" id="smOk">Хадгалах</button></div>`, 'sm');
+  $('#smDel').onclick = () => { arr[r] = null; closeModal(); commit(wkey()); };
+  $('#smOk').onclick = () => { e.note = $('#smNote').value.trim(); closeModal(); commit(wkey()); };
+  $('#smChg').onclick = () => { closeModal(); pickSlot(code, day, r); };
+}
+function pickSlot(code, day, r){
+  const t = settings().types.find(x=>x.code===code);
+  pickPerson({ title:`${t?.name||code} — ${DOWL[weekDays(S.date)[day].getDay()]}`, onPick:name => {
+    const w = curWeek(); w.grid[code] = w.grid[code]||{}; const arr = w.grid[code][day] = w.grid[code][day]||[];
+    while(arr.length < r) arr.push(null);
+    const old = arr[r]; arr[r] = { id: old?.id || uid(), name, a: old?.a || '', b: old?.b || '', note: old?.note || '' };
+    commit(wkey(), {noRender:true}); S.needRender = true; } });
 }
 
 /* ================= image upload ================= */
@@ -932,17 +985,18 @@ document.addEventListener('click', e => {
   const d = t.dataset;
   if(d.close){ closeModal(); return; }
   if(d.tab){ S.tab = d.tab; localStorage.setItem('lif:tab', S.tab); render(); $('#view').scrollTop = 0; return; }
-  if(!S.edit && (d.cal||d.add||d.chip||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
+  if(!S.edit && (d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
   if(d.cal){ const m = curMonth(), o = m[d.cal] = m[d.cal]||{}; o[d.day] = ({'':'g', g:'r', r:''})[o[d.day]||'']; if(!o[d.day]) delete o[d.day]; commit(mkey()); return; }
-  if(d.add){ const [code, day] = d.add.split('|'); const t2 = settings().types.find(x=>x.code===code);
-    pickPerson({ title:`${t2?.name||code} — ${DOWL[weekDays(S.date)[+day].getDay()]}`, withStatus:true, multi:true, onPick:(name, st) => {
-      const w = curWeek(); w.grid[code] = w.grid[code]||{}; const arr = w.grid[code][day] = w.grid[code][day]||[];
-      if(arr.some(x=>x.name===name)) return; arr.push({ id:uid(), name, st }); commit(wkey(), {noRender:true}); S.needRender = true; } });
-    return; }
-  if(d.chip){ const [code, day, id] = d.chip.split('|');
-    // богино дарах = төлөв солих; удаан дарах = цэс (доор)
-    if(longPressed){ longPressed = false; return; }
-    const e2 = curWeek().grid[code][day].find(x=>x.id===id); if(e2){ e2.st = ST_NEXT[e2.st]; commit(wkey()); } return; }
+  if(d.slot){ const [code, day, r] = d.slot.split('|'); if(longPressed){ longPressed = false; return; }
+    const e2 = ((curWeek().grid[code]||{})[day]||[])[+r];
+    if(e2 && e2.name) slotMenu(code, +day, +r); else pickSlot(code, +day, +r); return; }
+  if(d.ck){ const [code, day, r, k] = d.ck.split('|'); const e2 = ((curWeek().grid[code]||{})[day]||[])[+r];
+    if(!e2 || !e2.name){ toast('Эхлээд нэрээ сонгоно уу'); return; }
+    slotSt(e2); e2[k] = ({'':'ok', ok:'miss', miss:''})[e2[k]||'']; commit(wkey()); return; }
+  if(d.rowadd){ const w = curWeek(); w.rows = w.rows||{}; const t2 = settings().types.find(x=>x.code===d.rowadd); w.rows[d.rowadd] = rowsFor(w, t2) + 1; commit(wkey()); return; }
+  if(d.rowdel){ const w = curWeek(), t2 = settings().types.find(x=>x.code===d.rowdel), n = rowsFor(w, t2), g = w.grid[d.rowdel]||{};
+    if(Object.values(g).some(arr => arr && arr[n-1] && arr[n-1].name)){ toast('Сүүлийн мөрөнд нэр байна — эхлээд цэвэрлэнэ үү', true); return; }
+    Object.values(g).forEach(arr => { if(arr) arr.length = Math.min(arr.length, n-1); }); w.rows = w.rows||{}; w.rows[d.rowdel] = n-1; commit(wkey()); return; }
   if(d.star){ const w = curWeek(); w.featured = w.featured||[]; const i = w.featured.indexOf(d.star); i>=0 ? w.featured.splice(i,1) : w.featured.push(d.star); commit(wkey()); return; }
   if(d.madd){ pickPerson({ title:'Хурал хийх хүн нэмэх', multi:true, onPick:n => { const m = curWeek().meeting; if(!m.people.includes(n)) m.people.push(n); commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
   if(d.mrm){ const m = curWeek().meeting; m.people = m.people.filter(x=>x!==d.mrm); commit(wkey()); return; }
@@ -989,12 +1043,12 @@ document.addEventListener('click', e => {
 // long-press on chip → menu
 let lpTimer = null, longPressed = false;
 document.addEventListener('pointerdown', e => {
-  const c = e.target.closest('[data-chip]'); if(!c || !S.edit) return;
+  const c = e.target.closest('[data-slot]'); if(!c || !S.edit) return;
   longPressed = false;
-  lpTimer = setTimeout(() => { longPressed = true; const [code, day, id] = c.dataset.chip.split('|'); chipMenu(code, +day, id); }, 550);
+  lpTimer = setTimeout(() => { const [code, day, r] = c.dataset.slot.split('|'); const e2 = ((curWeek().grid[code]||{})[day]||[])[+r]; if(e2 && e2.name){ longPressed = true; slotMenu(code, +day, +r); } }, 550);
 });
 ['pointerup','pointercancel','pointermove'].forEach(ev => document.addEventListener(ev, e => { if(ev==='pointermove' && Math.abs(e.movementX)+Math.abs(e.movementY) < 4) return; clearTimeout(lpTimer); }));
-document.addEventListener('contextmenu', e => { const c = e.target.closest('[data-chip]'); if(c){ e.preventDefault(); clearTimeout(lpTimer); longPressed = true; const [code, day, id] = c.dataset.chip.split('|'); chipMenu(code, +day, id); } });
+
 
 document.addEventListener('submit', e => {
   if(e.target.id === 'riskForm'){ e.preventDefault(); const f = e.target; const rs = getDoc('risks', ()=>({list:[]}));
@@ -1007,6 +1061,7 @@ document.addEventListener('change', e => {
   if(e.target.id === 'setWs'){ settings().weekStart = +e.target.value; commit('settings'); }
   if(d.tcode !== undefined){ settings().types[+d.tcode].code = e.target.value.trim().toUpperCase() || 'X'; commit('settings'); }
   if(d.tname !== undefined){ settings().types[+d.tname].name = e.target.value; commit('settings'); }
+  if(d.tslots !== undefined){ settings().types[+d.tslots].slots = Math.max(1, Math.min(10, +e.target.value || 1)); commit('settings'); }
   if(d.tcolor !== undefined){ settings().types[+d.tcolor].color = e.target.value; commit('settings'); }
   if(d.note){ const m = curMonth(); m.notes = m.notes||{}; m.notes[d.note] = e.target.value; commit(mkey(), {noRender:true}); }
   if(e.target.id === 'pdept'){ S.pdept = e.target.value; render(); }
