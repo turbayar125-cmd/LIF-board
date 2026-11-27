@@ -145,7 +145,7 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .eg2 td.nm,.eg2 td.ck{border:1px solid var(--line2);padding:0;height:var(--rh,2.9rem);background:#fff}
 .eg2 td.today{background:#fffbea}
 .slotb{width:100%;height:100%;display:flex;align-items:center;gap:.3rem;padding:0 .4rem;text-align:left;font-weight:700;font-size:.92rem;min-height:var(--rh,2.9rem)}
-.slotb .tx{overflow:hidden;white-space:nowrap;flex:1;min-width:0;letter-spacing:-.01em;font-size:1.1rem;text-align:center}
+.slotb .tx{overflow:hidden;white-space:nowrap;flex:1;min-width:0;letter-spacing:-.01em;font-size:1.1rem;text-align:center;line-height:1.1}
 .slotb .nt{color:var(--mut);font-size:.8rem}
 .slotb.blank .plus{margin:auto;color:#cfc5a8;font-size:1.3rem;font-weight:800}
 .view .slotb.blank .plus{display:none}
@@ -768,8 +768,7 @@ function fitGrid(){
     tb.style.setProperty('--rh', rh + 'px');
     // нэрийг нүдэндээ бүтэн багтаах
     tb.querySelectorAll('.slotb .tx').forEach(x => {
-      x.style.fontSize = '';
-      let fs = parseFloat(getComputedStyle(x).fontSize); const min = Math.max(9, rem * .62);
+      let fs = Math.round(Math.min(rh * .32, rem * 1.8)); x.style.fontSize = fs + 'px'; const min = Math.max(9, rem * .62);
       while(x.scrollWidth > x.clientWidth + 1 && fs > min){ fs -= 0.5; x.style.fontSize = fs + 'px'; }
     });
   });
