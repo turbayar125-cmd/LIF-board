@@ -159,6 +159,29 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .dash .slotb{padding:0 .25rem} .dash .ckb{font-size:.9rem} .dash .eg2 col.ckc{width:1.9rem}
 .dash .ph{padding:.4rem .5rem;gap:.3rem} .dash .ph h3{font-size:.98rem;gap:.35rem} .dash .ph h3 .n{min-width:1.4rem;height:1.4rem;font-size:.78rem}
 .dash .pb{padding:.5rem}
+.scnt{font-size:.82rem;font-weight:800;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:1rem;padding:.1rem .5rem;white-space:nowrap;min-width:2.6rem;text-align:center}
+.scnt.z{opacity:.45}
+.star{transition:transform .15s} .star:active{transform:scale(1.3)}
+#starpop{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:rgba(20,18,10,.55)}
+#starpop.show{display:grid;animation:spFade .2s ease-out}
+.sp-card{position:relative;overflow:hidden;background:linear-gradient(160deg,#fffbea,#fff 55%);border-radius:1.6rem;padding:2.4rem 3.4rem 2rem;text-align:center;min-width:30rem;box-shadow:0 2rem 5rem rgba(0,0,0,.35);border:3px solid var(--y);animation:spPop .45s cubic-bezier(.2,1.6,.4,1)}
+.sp-rays{position:absolute;left:50%;top:5.5rem;width:40rem;height:40rem;margin:-20rem 0 0 -20rem;background:repeating-conic-gradient(rgba(255,194,14,.18) 0 10deg,transparent 10deg 20deg);animation:spSpin 6s linear infinite;pointer-events:none}
+.sp-av{position:relative;width:9rem;height:9rem;margin:0 auto 1rem}
+.sp-av img,.sp-av span{width:100%;height:100%;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:var(--y);font-size:3rem;font-weight:900;border:5px solid #fff;box-shadow:0 .4rem 1.2rem rgba(0,0,0,.2)}
+.sp-star{position:absolute;right:-1.4rem;bottom:-1rem;font-style:normal;font-size:5rem;line-height:1;color:#f59e0b;text-shadow:0 0 1.2rem rgba(255,194,14,.9),0 .2rem .3rem rgba(0,0,0,.25);animation:spStar .7s cubic-bezier(.2,1.8,.4,1) .1s both}
+.sp-lbl{position:relative;font-size:1rem;font-weight:800;color:#b45309;letter-spacing:.03em}
+.sp-name{position:relative;font-size:2.4rem;font-weight:900;margin:.3rem 0 .2rem}
+.sp-role{position:relative;font-size:1.15rem;color:var(--mut);font-weight:600}
+.sp-n{position:relative;margin-top:1rem;font-size:1.3rem}
+.sp-n b{color:#d97706;font-size:1.8rem}
+.sp-undo{position:relative;margin-top:1rem;font-size:.95rem;font-weight:700;padding:.45rem 1.1rem;border-radius:.5rem;border:1px solid var(--line2);background:#fff}
+.sp-bar{position:absolute;left:0;bottom:0;height:.35rem;background:var(--y);animation:spBar 2s linear forwards}
+@keyframes spFade{from{opacity:0}}
+@keyframes spPop{from{transform:scale(.6);opacity:0}}
+@keyframes spStar{from{transform:scale(0) rotate(-120deg)}}
+@keyframes spSpin{to{transform:rotate(360deg)}}
+@keyframes spBar{from{width:100%}to{width:0}}
+@media (prefers-reduced-motion:reduce){.sp-card,.sp-star,.sp-rays,#starpop.show{animation:none}}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -453,7 +476,7 @@ async function startCloud(){
 // fallback poll (realtime унтарсан тохиолдолд)
 setInterval(async () => {
   if(!S.cloud || S.dirty.size || S.drawing) return;
-  const keys = ['settings', wkey(), mkey(), 'risks', 'schedule', 'mapbg', 'featured'];
+  const keys = ['settings', wkey(), mkey(), 'risks', 'schedule', 'mapbg', 'featured', 'stars'];
   const { data } = await sb.from('lif_docs').select('key,data,client_t').in('key', keys);
   let ch = false;
   for(const r of data||[]){ const loc = S.docs[r.key]; if(!loc || (r.client_t||0) > (loc.t||0)){ S.docs[r.key] = {data:r.data, t:r.client_t||0}; saveLocal(r.key); ch = true; } }
@@ -470,6 +493,9 @@ function matchPerson(n, list){
       || list.find(p => { const t = normName(p.name).split(' '); const u = a.split(' ').filter(x => x.length > 2); return u.length && u.every(x => t.some(y => y === x || (x.length > 3 && y.startsWith(x)))); }) || null;
 }
 const featDoc = () => peek('featured', () => ({ list:[] }));
+// Од (онцлох ярилцлага хийсэн) — бүх цаг үеийн бүртгэл
+const starLog = () => peek('stars', () => ({ log:[] })).log || [];
+function starInfo(name){ const k = normName(name), today = ymd(new Date()); let n = 0, td = false; for(const e of starLog()) if(normName(e.name) === k){ n++; if(e.date === today) td = true; } return { n, today:td }; }
 function allPeople(){
   const base = basePeople();
   const fl = (featDoc().list||[]).filter(f => !matchPerson(f.name, base)).map(f => ({ id:'f'+f.name, name:f.name, role:f.role||'', dept:f.dept||'', photo:'', feat:true }));
@@ -587,10 +613,9 @@ function peopleListHTML(limit){
   let ps = fl.length ? fl : allPeople();
   if(!fl.length && S.edit) return `<div class="empty"><div><b>Онцлох жагсаалт оруулаагүй</b>Excel файлаас оруулна<br><button class="btn y" data-featimp="1" style="margin-top:.6rem">⬆ Excel оруулах</button></div></div>`;
   if(!ps.length) return `<div class="empty"><div><b>Ажилтны жагсаалт хоосон</b>Нэвтэрмэгц сургалтын системээс автоматаар татагдана, эсвэл Тохиргоо → нэмэлт хүн.</div></div>`;
-  ps = ps.map(p => ({...p, c:(stt.perName[p.name]?.ok)||0, f:fav.has(p.name)}))
-         .sort((a,b) => (b.f-a.f) || (b.c-a.c) || a.name.localeCompare(b.name));
+  ps = ps.map(p => ({...p, si:starInfo(p.name)})).sort((a,b) => a.name.localeCompare(b.name));
   if(limit) ps = ps.slice(0, limit);
-  return `<div class="plist">${ps.map(p => `<div class="prow">${avatar(p,'sm')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role||p.dept)}</small></div><span class="cnt ${p.c?'':'z'}" title="Энэ долоо хоногт хийсэн">${p.c}</span><button class="star ${p.f?'on':''}" data-star="${esc(p.name)}" aria-label="Онцлох">★</button></div>`).join('')}</div>`;
+  return `<div class="plist">${ps.map(p => `<div class="prow">${avatar(p,'sm')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role||p.dept)}</small></div><span class="scnt ${p.si.n?'':'z'}" title="Нийт авсан од">★ ${p.si.n}</span><button class="star ${p.si.today?'on':''}" data-star="${esc(p.name)}" aria-label="Онцлох ярилцлага хийсэн">★</button></div>`).join('')}</div>`;
 }
 
 function meetingPeopleHTML(big){
@@ -697,8 +722,8 @@ function viewPeople(){
   let ps = src.filter(p => (!dept || p.dept===dept) && (!q || (p.name+' '+p.role).toLowerCase().includes(q)));
   ps.sort((a,b) => ((st.perName[b.name]?.ok||0) - (st.perName[a.name]?.ok||0)) || a.name.localeCompare(b.name));
   const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
-  return panel('6', mode==='feat' ? `Онцлох ярилцлага (${ps.length})` : `Хүмүүс (${ps.length})`, tb + (mode==='feat' && !fl.length ? `<div class="empty" style="height:auto;margin-bottom:.6rem"><div><b>Онцлох жагсаалт хоосон</b>“Excel-ээс оруулах” товчоор жагсаалтаа оруулна. Нэр, албан тушаал, алба баганатай ямар ч Excel ажиллана.</div></div>` : '') + `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ = онцлох ярилцлага</span></div>
-    ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}">${s?.ok||0}</span><button class="star ${fav.has(p.name)?'on':''}" data-star="${esc(p.name)}">★</button></div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
+  return panel('6', mode==='feat' ? `Онцлох ярилцлага (${ps.length})` : `Хүмүүс (${ps.length})`, tb + (mode==='feat' && !fl.length ? `<div class="empty" style="height:auto;margin-bottom:.6rem"><div><b>Онцлох жагсаалт хоосон</b>“Excel-ээс оруулах” товчоор жагсаалтаа оруулна. Нэр, албан тушаал, алба баганатай ямар ч Excel ажиллана.</div></div>` : '') + `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ N = нийт авсан од · ★ дарахад өнөөдрийн онцлох ярилцлагад од нэмнэ</span></div>
+    ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}" title="Энэ долоо хоногт хийсэн engagement">${s?.ok||0}</span>${(si => `<span class="scnt ${si.n?'':'z'}" title="Нийт авсан од">★ ${si.n}</span><button class="star ${si.today?'on':''}" data-star="${esc(p.name)}">★</button>`)(starInfo(p.name))}</div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
 }
 function viewSched(){
   return panel('7', 'Main Schedule / Хуваарь', `<div style="height:calc(100% - 3.6rem)">${imgDocHTML('schedule','Хуваарийн зураг оруулаагүй','Хуваарийн зураг, PDF-ийн screenshot г.м.')}</div>${S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn y" data-upimg="schedule">Зураг оруулах / солих</button><button class="btn danger" data-rmimg="schedule">Устгах</button></div>`:''}`, {cls:'full'});
@@ -911,6 +936,33 @@ function pickImage(cb){
   inp.click();
 }
 
+/* ================= Од өгөх ================= */
+let starTimer = null;
+function addStar(name){
+  const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log || [];
+  const e = { id:uid(), name, date:ymd(new Date()), t:Date.now(), by:S.user?.email || '' };
+  sd.log.push(e); commit('stars');
+  const f = (featDoc().list||[]).find(x => normName(x.name) === normName(name));
+  const m = personByName(name) || { name };
+  showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || '' }, starInfo(name).n, e.id);
+}
+function showStarPop(p, n, id){
+  let el = $('#starpop'); if(!el){ el = document.createElement('div'); el.id = 'starpop'; document.body.appendChild(el); }
+  const d = new Date();
+  el.innerHTML = `<div class="sp-card">
+    <div class="sp-rays"></div>
+    <div class="sp-av">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : `<span>${esc(initials(p.name).toUpperCase())}</span>`}<i class="sp-star">★</i></div>
+    <div class="sp-lbl">Онцлох ярилцлага · ${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}</div>
+    <div class="sp-name">${esc(p.name)}</div>
+    <div class="sp-role">${esc([p.role, p.dept].filter(Boolean).join(' · '))}</div>
+    <div class="sp-n"><b>★ ${n}</b> од</div>
+    <button class="sp-undo" data-unstar="${esc(id)}">Буцаах</button>
+    <div class="sp-bar"></div></div>`;
+  el.className = 'show';
+  clearTimeout(starTimer); starTimer = setTimeout(hideStarPop, 2000);
+}
+function hideStarPop(){ const el = $('#starpop'); if(el){ el.className = ''; } clearTimeout(starTimer); }
+
 /* ================= Excel → онцлох жагсаалт ================= */
 let xlsxP = null;
 function loadXLSX(){
@@ -1030,7 +1082,8 @@ document.addEventListener('click', e => {
   if(d.rowdel){ const w = curWeek(), t2 = settings().types.find(x=>x.code===d.rowdel), n = rowsFor(w, t2), g = w.grid[d.rowdel]||{};
     if(Object.values(g).some(arr => arr && arr[n-1] && arr[n-1].name)){ toast('Сүүлийн мөрөнд нэр байна — эхлээд цэвэрлэнэ үү', true); return; }
     Object.values(g).forEach(arr => { if(arr) arr.length = Math.min(arr.length, n-1); }); w.rows = w.rows||{}; w.rows[d.rowdel] = n-1; commit(wkey()); return; }
-  if(d.star){ const w = curWeek(); w.featured = w.featured||[]; const i = w.featured.indexOf(d.star); i>=0 ? w.featured.splice(i,1) : w.featured.push(d.star); commit(wkey()); return; }
+  if(d.star){ addStar(d.star); return; }
+  if(d.unstar){ const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log.filter(x => x.id !== d.unstar); hideStarPop(); commit('stars'); toast('Одыг буцаалаа'); return; }
   if(d.madd){ pickPerson({ title:'Хурал хийх хүн нэмэх', multi:true, onPick:n => { const m = curWeek().meeting; if(!m.people.includes(n)) m.people.push(n); commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
   if(d.mrm){ const m = curWeek().meeting; m.people = m.people.filter(x=>x!==d.mrm); commit(wkey()); return; }
   if(d.pmode){ S.pmode = d.pmode; render(); return; }
@@ -1123,6 +1176,7 @@ $('#restoreFile').onchange = e => {
   rd.readAsText(f); e.target.value = '';
 };
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+document.addEventListener('pointerdown', e => { if(e.target.id === 'starpop') hideStarPop(); });
 // шөнө дунд өдөр солигдоход шинэчлэх
 let lastDay = ymd(new Date());
 setInterval(() => { const n = ymd(new Date()); if(n !== lastDay){ if(ymd(S.date) === lastDay) S.date = new Date(); lastDay = n; if(!S.drawing && !$('#modal').classList.contains('open')) render(); } }, 60000);
