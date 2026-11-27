@@ -239,7 +239,7 @@ code{background:#f4f0e3;padding:.1rem .35rem;border-radius:.3rem;font-size:.9em}
 <body>
 
 <header class="top">
-  <div class="brand"><img src="logo-mark.png" alt=""><div><b id="brandT">LEADERSHIP IN THE FIELD</b><small>Engagements board · Premium</small></div></div>
+  <div class="brand"><img src="logo-mark.png" alt=""><div><b id="brandT">LEADERSHIP IN THE FIELD</b><small id="brandS">Engagements board · Premium</small></div></div>
   <nav class="tabs" id="tabs"></nav>
   <button class="tbtn" id="btnEdit" title="Засах / харах горим"></button>
   <button class="tbtn" id="btnFull" title="Бүтэн дэлгэц (MAXHUB)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Бүтэн дэлгэц</button>
@@ -427,7 +427,7 @@ async function startCloud(){
 // fallback poll (realtime унтарсан тохиолдолд)
 setInterval(async () => {
   if(!S.cloud || S.dirty.size || S.drawing) return;
-  const keys = ['settings', wkey(), mkey(), 'risks', 'schedule', 'mapbg'];
+  const keys = ['settings', wkey(), mkey(), 'risks', 'schedule', 'mapbg', 'featured'];
   const { data } = await sb.from('lif_docs').select('key,data,client_t').in('key', keys);
   let ch = false;
   for(const r of data||[]){ const loc = S.docs[r.key]; if(!loc || (r.client_t||0) > (loc.t||0)){ S.docs[r.key] = {data:r.data, t:r.client_t||0}; saveLocal(r.key); ch = true; } }
@@ -435,11 +435,21 @@ setInterval(async () => {
 }, 60000);
 
 /* ================= people helpers ================= */
-function allPeople(){
-  const ex = settings().extraPeople.map(p => ({...p, extra:true}));
-  return [...S.people, ...ex];
+const normName = n => String(n||'').toLowerCase().replace(/[.\-_,]/g,' ').replace(/\s+/g,' ').trim();
+const tokKey = n => normName(n).split(' ').filter(Boolean).sort().join(' ');
+function basePeople(){ return [...S.people, ...settings().extraPeople.map(p => ({...p, extra:true}))]; }
+function matchPerson(n, list){
+  list = list || basePeople(); const a = normName(n), k = tokKey(n); if(!a) return null;
+  return list.find(p => normName(p.name) === a) || list.find(p => tokKey(p.name) === k)
+      || list.find(p => { const t = normName(p.name).split(' '); const u = a.split(' ').filter(x => x.length > 2); return u.length && u.every(x => t.some(y => y === x || (x.length > 3 && y.startsWith(x)))); }) || null;
 }
-function personByName(n){ return allPeople().find(p => p.name === n); }
+const featDoc = () => peek('featured', () => ({ list:[] }));
+function allPeople(){
+  const base = basePeople();
+  const fl = (featDoc().list||[]).filter(f => !matchPerson(f.name, base)).map(f => ({ id:'f'+f.name, name:f.name, role:f.role||'', dept:f.dept||'', photo:'', feat:true }));
+  return [...base, ...fl];
+}
+function personByName(n){ const all = allPeople(); return all.find(p => p.name === n) || matchPerson(n, all); }
 function avatar(p, cls=''){
   if(p?.photo) return `<img class="av ${cls}" src="${esc(p.photo)}" alt="" loading="lazy">`;
   return `<span class="av ${cls}">${esc(initials(p?.name).toUpperCase())}</span>`;
@@ -468,7 +478,7 @@ function renderChrome(){
   $('#tabs').innerHTML = TABS.map(([id,n,l]) => `<button data-tab="${id}" class="${S.tab===id?'on':''}">${n?`<span class="n">${n}</span>`:''}${l}</button>`).join('');
   $('#btnEdit').className = 'tbtn' + (S.edit ? ' on' : '');
   $('#btnEdit').innerHTML = S.edit ? '✎ Засах горим' : '👁 Харах горим';
-  $('#brandT').textContent = (settings().title || 'Leadership in the Field').toUpperCase();
+  $('#brandS').textContent = (settings().title || 'Engagements board') + ' · Premium';
   $('#dateIn').value = ymd(S.date);
   const ds = weekDays(S.date);
   $('#wkLabel').innerHTML = `${weekKey(S.date)}<small>${ds[0].getMonth()+1}/${ds[0].getDate()} – ${ds[6].getMonth()+1}/${ds[6].getDate()} · ${DOWL[S.date.getDay()]}, ${S.date.getFullYear()}.${pad(S.date.getMonth()+1)}.${pad(S.date.getDate())}</small>`;
@@ -514,9 +524,14 @@ function gridHTML(){
   return h + '</tbody></table>';
 }
 
+function featuredPeople(){
+  return (featDoc().list||[]).map(f => { const m = matchPerson(f.name); return { ...(m||{}), name: m ? m.name : f.name, role: f.role || m?.role || '', dept: f.dept || m?.dept || '', photo: m?.photo || '', xname: f.name }; });
+}
 function peopleListHTML(limit){
   const w = curWeek(), stt = weekStats(w), fav = new Set(w.featured||[]);
-  let ps = allPeople();
+  const fl = featuredPeople();
+  let ps = fl.length ? fl : allPeople();
+  if(!fl.length && S.edit) return `<div class="empty"><div><b>Онцлох жагсаалт оруулаагүй</b>Excel файлаас оруулна<br><button class="btn y" data-featimp="1" style="margin-top:.6rem">⬆ Excel оруулах</button></div></div>`;
   if(!ps.length) return `<div class="empty"><div><b>Ажилтны жагсаалт хоосон</b>Нэвтэрмэгц сургалтын системээс автоматаар татагдана, эсвэл Тохиргоо → нэмэлт хүн.</div></div>`;
   ps = ps.map(p => ({...p, c:(stt.perName[p.name]?.ok)||0, f:fav.has(p.name)}))
          .sort((a,b) => (b.f-a.f) || (b.c-a.c) || a.name.localeCompare(b.name));
@@ -567,7 +582,7 @@ function viewDash(){
   return `<div class="dash">${kpis}
     <div class="colL">
       <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {more:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {more:'qual'})}</div>
-      ${panel('★','Онцлох ярилцлага', peopleListHTML(), {cls:'grow', more:'people'})}
+      ${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'grow', more:'people'})}
     </div>
     <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridHTML(), {cls:'grow', more:'grid', right:`<span class="chip-s">✓ ${st.ok} · ✗ ${st.miss} · ○ ${st.plan}</span>`})}</div>
     <div class="colR">
@@ -618,11 +633,17 @@ function viewRisk(){
 function viewPeople(){
   const st = weekStats(curWeek()), fav = new Set(curWeek().featured||[]), types = settings().types;
   const q = (S.pq||'').toLowerCase(), dept = S.pdept||'';
-  const depts = [...new Set(allPeople().map(p=>p.dept).filter(Boolean))].sort();
-  let ps = allPeople().filter(p => (!dept || p.dept===dept) && (!q || (p.name+' '+p.role).toLowerCase().includes(q)));
+  const fl = featuredPeople(); const mode = S.pmode || (fl.length ? 'feat' : 'all');
+  const src = mode === 'feat' ? fl : allPeople();
+  const depts = [...new Set(src.map(p=>p.dept).filter(Boolean))].sort();
+  const fd = featDoc();
+  const tb = `<div class="bar"><div class="seg"><button data-pmode="feat" class="${mode==='feat'?'on':''}">★ Онцлох жагсаалт (${fl.length})</button><button data-pmode="all" class="${mode==='all'?'on':''}">Бүх ажилтан (${allPeople().length})</button></div>
+    ${S.edit ? `<button class="btn y" data-featimp="1">⬆ Excel-ээс оруулах</button><button class="btn" data-feattpl="1">⬇ Загвар Excel</button>${fl.length?'<button class="btn danger" data-featclr="1">Жагсаалт цэвэрлэх</button>':''}` : ''}
+    ${fd.src ? `<span class="note">Сүүлд: ${esc(fd.src)} · ${esc(fd.at||'')}</span>` : ''}</div>`;
+  let ps = src.filter(p => (!dept || p.dept===dept) && (!q || (p.name+' '+p.role).toLowerCase().includes(q)));
   ps.sort((a,b) => ((st.perName[b.name]?.ok||0) - (st.perName[a.name]?.ok||0)) || a.name.localeCompare(b.name));
   const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
-  return panel('6', `Хүмүүс (${ps.length})`, `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ = онцлох ярилцлага</span></div>
+  return panel('6', mode==='feat' ? `Онцлох ярилцлага (${ps.length})` : `Хүмүүс (${ps.length})`, tb + (mode==='feat' && !fl.length ? `<div class="empty" style="height:auto;margin-bottom:.6rem"><div><b>Онцлох жагсаалт хоосон</b>“Excel-ээс оруулах” товчоор жагсаалтаа оруулна. Нэр, албан тушаал, алба баганатай ямар ч Excel ажиллана.</div></div>` : '') + `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ = онцлох ярилцлага</span></div>
     ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}">${s?.ok||0}</span><button class="star ${fav.has(p.name)?'on':''}" data-star="${esc(p.name)}">★</button></div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
 }
 function viewSched(){
@@ -804,6 +825,91 @@ function pickImage(cb){
   inp.click();
 }
 
+/* ================= Excel → онцлох жагсаалт ================= */
+let xlsxP = null;
+function loadXLSX(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  return xlsxP = xlsxP || new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; sc.onload = () => ok(window.XLSX); sc.onerror = () => { xlsxP = null; no(new Error('Excel уншигч ачаалсангүй (интернэт шалгана уу)')); }; document.head.appendChild(sc); });
+}
+const COLS = {
+  name:  ['овог нэр','овог, нэр','бүтэн нэр','ажилтны нэр','full name','fullname','name','нэр'],
+  first: ['нэр','first name','firstname','given'],
+  last:  ['овог','last name','lastname','surname','family'],
+  role:  ['албан тушаал','position','title','role','job','тушаал'],
+  dept:  ['алба','хэлтэс','department','dept','team','баг','нэгж']
+};
+function findHeader(rows){
+  const score = r => r.reduce((n,c) => { const v = normName(c); return n + (Object.values(COLS).some(ks => ks.some(k => v === k || v.includes(k))) ? 1 : 0); }, 0);
+  let best = 0, bi = -1;
+  rows.slice(0, 15).forEach((r,i) => { const sc = score(r||[]); if(sc > best){ best = sc; bi = i; } });
+  return bi;
+}
+function mapCols(h){
+  const v = h.map(c => normName(c)), pick = (keys, avoid=[]) => { for(const k of keys){ const i = v.findIndex((x,j) => !avoid.includes(j) && x === k); if(i >= 0) return i; } for(const k of keys){ const i = v.findIndex((x,j) => !avoid.includes(j) && x.includes(k)); if(i >= 0) return i; } return -1; };
+  const m = {};
+  m.role = pick(COLS.role); m.dept = pick(COLS.dept, [m.role]);
+  const used = [m.role, m.dept];
+  m.name = pick(COLS.name.slice(0,7), used);   // "овог нэр", "full name" г.м.
+  if(m.name < 0){ m.last = pick(COLS.last, used); m.first = pick(COLS.first, [...used, m.last]); if(m.last >= 0 && m.first < 0) m.name = m.last, m.last = -1; if(m.first >= 0 && m.last < 0) m.name = m.first, m.first = -1; }
+  return m;
+}
+function parseSheet(XLSX, wb){
+  for(const sn of wb.SheetNames){
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header:1, defval:'', raw:false });
+    const hi = findHeader(rows); if(hi < 0) continue;
+    const m = mapCols(rows[hi]); if(m.name < 0 && m.first < 0) continue;
+    const seen = new Set(), list = [];
+    for(const r of rows.slice(hi+1)){
+      const cell = i => i >= 0 ? String(r[i] ?? '').trim() : '';
+      const ln = cell(m.last).replace(/\.$/,''), fn = cell(m.first);
+      let name = m.name >= 0 ? cell(m.name) : (ln && ln.length <= 2 && fn ? `${ln}.${fn}` : [fn, ln].filter(Boolean).join(' '));
+      name = name.replace(/\s+/g,' ').trim();
+      if(!name || /^\d+$/.test(name) || /^(нийт|total)/i.test(name)) continue;
+      const k = normName(name); if(seen.has(k)) continue; seen.add(k);
+      list.push({ name, role:cell(m.role), dept:cell(m.dept) });
+    }
+    if(list.length) return { sheet:sn, list, cols:m, header:rows[hi] };
+  }
+  return null;
+}
+function importFeatured(){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls,.xlsm,.csv';
+  inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{
+      const XLSX = await loadXLSX();
+      const wb = XLSX.read(await f.arrayBuffer(), { type:'array' });
+      const res = parseSheet(XLSX, wb);
+      if(!res){ toast('“Нэр” баганатай хүснэгт олдсонгүй. Загвар Excel-ийг ашиглана уу.', true); return; }
+      previewImport(res, f.name);
+    }catch(err){ console.warn(err); toast(err.message || 'Файл уншиж чадсангүй', true); }
+  };
+  inp.click();
+}
+function previewImport(res, fname){
+  const old = featDoc().list || [];
+  const matched = res.list.filter(x => matchPerson(x.name)).length;
+  const hn = i => i >= 0 ? esc(res.header[i]) : '—';
+  openModal(`<div class="mh"><h2>Онцлох жагсаалт оруулах</h2><button class="x" data-close="1">×</button></div>
+    <div class="mb"><p class="note"><b>${esc(fname)}</b> · хуудас “${esc(res.sheet)}” · багана: нэр = <b>${res.cols.name>=0?hn(res.cols.name):hn(res.cols.first)+' + '+hn(res.cols.last)}</b>, албан тушаал = <b>${hn(res.cols.role)}</b>, алба = <b>${hn(res.cols.dept)}</b></p>
+    <div class="kpis" style="margin:.6rem 0"><div class="kpi"><div class="v">${res.list.length}</div><div class="l">Хүн олдлоо</div></div><div class="kpi"><div class="v" style="color:var(--ok)">${matched}</div><div class="l">Ажилтны бүртгэлтэй таарсан (зурагтай)</div></div><div class="kpi"><div class="v">${old.length}</div><div class="l">Одоогийн жагсаалт</div></div></div>
+    <div class="plist" style="max-height:22rem;overflow:auto;border:1px solid var(--line);border-radius:.5rem;padding:0 .5rem">${res.list.map(x => { const m = matchPerson(x.name); return `<div class="prow">${avatar(m||x,'sm')}<div class="i"><b>${esc(x.name)}</b><small>${esc([x.role,x.dept].filter(Boolean).join(' · '))}</small></div>${m?'<span class="cnt" style="color:var(--ok)">✓</span>':'<span class="cnt z" title="Ажилтны бүртгэлд олдсонгүй">?</span>'}</div>`; }).join('')}</div></div>
+    <div class="mf">${old.length?'<button class="btn" id="impAdd">Нэмж оруулах</button>':''}<button class="btn pri" id="impRep">${old.length?'Солих':'Оруулах'}</button></div>`);
+  const save = list => { const f = getDoc('featured', ()=>({list:[]})); f.list = list; f.src = fname; f.at = ymd(new Date()); closeModal(); S.pmode = 'feat'; commit('featured'); toast(`${list.length} хүн онцлох жагсаалтад орлоо`); };
+  $('#impRep').onclick = () => save(res.list);
+  const ad = $('#impAdd'); if(ad) ad.onclick = () => { const ks = new Set(old.map(x => normName(x.name))); save([...old, ...res.list.filter(x => !ks.has(normName(x.name)))]); };
+}
+async function featTemplate(){
+  try{
+    const XLSX = await loadXLSX();
+    const cur = featDoc().list || [];
+    const rows = [['Нэр','Албан тушаал','Алба'], ...(cur.length ? cur.map(x => [x.name, x.role, x.dept]) : [['Altangerel Byambadorj','HSE Advisor','HSE'],['Chinbat Lkhagvasuren','QAQC Superintendent','QAQC']])];
+    const ws = XLSX.utils.aoa_to_sheet(rows); ws['!cols'] = [{wch:30},{wch:28},{wch:14}];
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Онцлох');
+    XLSX.writeFile(wb, 'LIF-onclokh-jagsaalt.xlsx');
+  }catch(err){ toast(err.message, true); }
+}
+
 /* ================= login ================= */
 function loginModal(){
   if(!sb){ toast('Supabase сан ачаалж чадсангүй (интернэт шалгана уу)', true); return; }
@@ -840,6 +946,10 @@ document.addEventListener('click', e => {
   if(d.star){ const w = curWeek(); w.featured = w.featured||[]; const i = w.featured.indexOf(d.star); i>=0 ? w.featured.splice(i,1) : w.featured.push(d.star); commit(wkey()); return; }
   if(d.madd){ pickPerson({ title:'Хурал хийх хүн нэмэх', multi:true, onPick:n => { const m = curWeek().meeting; if(!m.people.includes(n)) m.people.push(n); commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
   if(d.mrm){ const m = curWeek().meeting; m.people = m.people.filter(x=>x!==d.mrm); commit(wkey()); return; }
+  if(d.pmode){ S.pmode = d.pmode; render(); return; }
+  if(d.featimp){ importFeatured(); return; }
+  if(d.feattpl){ featTemplate(); return; }
+  if(d.featclr){ if(!confirm('Онцлох жагсаалтыг бүхэлд нь цэвэрлэх үү?')) return; const f = getDoc('featured', ()=>({list:[]})); f.list = []; f.src = ''; commit('featured'); return; }
   if(d.pen){ S.pen.mode = 'pen'; S.pen.color = d.pen; render(); return; }
   if(d.marker){ S.pen.mode = 'marker'; S.pen.marker = d.marker; render(); return; }
   if(d.erase){ S.pen.mode = 'erase'; render(); return; }
