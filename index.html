@@ -182,6 +182,29 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 @keyframes spSpin{to{transform:rotate(360deg)}}
 @keyframes spBar{from{width:100%}to{width:0}}
 @media (prefers-reduced-motion:reduce){.sp-card,.sp-star,.sp-rays,#starpop.show{animation:none}}
+/* v2 нэмэлт */
+.lx{margin-left:.2rem;width:1.4rem;height:1.4rem;border-radius:50%;background:#fff;border:1px solid var(--line2);font-weight:800;line-height:1;color:var(--mut)}
+.mtext{font-size:.85rem;line-height:1.35;background:#fffbea;border:1px solid var(--line);border-radius:.45rem;padding:.35rem .5rem;margin-bottom:.4rem;white-space:pre-wrap;max-height:6.5rem;overflow:auto}
+.mtext.risk{background:#fef2f2;border-color:#fecaca;color:#7f1d1d;font-weight:600}
+.avbtn{position:relative;padding:0;border-radius:50%;flex:none}
+.avbtn i{position:absolute;right:-.2rem;bottom:-.2rem;font-style:normal;font-size:.9rem;background:#fff;border-radius:50%;width:1.5rem;height:1.5rem;display:grid;place-items:center;box-shadow:var(--shadow)}
+.pb{position:relative}
+.inkover{position:absolute;inset:0;pointer-events:none;z-index:3}
+.inkover canvas{position:absolute;inset:0;width:100%;height:100%}
+.inkover.on{pointer-events:auto;touch-action:none;outline:3px dashed rgba(220,38,38,.35);outline-offset:-3px;cursor:crosshair}
+.pen.sm{width:1.7rem;height:1.7rem;border-width:2px;flex:none}
+.more.on{background:var(--y);color:var(--ink)}
+.pindots{display:flex;gap:.8rem;justify-content:center;margin:.4rem 0 1.2rem}
+.pindots i{width:1.1rem;height:1.1rem;border-radius:50%;border:2px solid var(--ink)}
+.pindots i.on{background:var(--ink)}
+.pindots.bad{animation:shake .4s}.pindots.bad i{border-color:var(--bad)}
+@keyframes shake{25%{transform:translateX(-.6rem)}75%{transform:translateX(.6rem)}}
+.pinpad{display:grid;grid-template-columns:repeat(3,5.2rem);gap:.7rem;justify-content:center}
+.pinpad button{height:4.4rem;border-radius:1rem;background:#f4f0e3;font-size:1.7rem;font-weight:800}
+.pinpad button:active{background:var(--y)}
+body.display .tabs, body.display #btnEdit, body.display .sub .sync, body.display .sub .sbtn:not(#todayB), body.display .datenav input{display:none!important}
+body.display .sub{padding:.35rem 1rem}
+body:not(.view) .ed{} body.view .ed{display:none}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -192,7 +215,7 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .cnt.z{opacity:.45}
 .star{font-size:1.35rem;color:#d4cbb0;width:2.2rem;height:2.2rem;display:grid;place-items:center}
 .star.on{color:#f59e0b}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.6rem}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(22rem,1fr));gap:.6rem}
 .pcard{display:flex;align-items:center;gap:.7rem;background:#fff;border:1px solid var(--line);border-radius:.6rem;padding:.6rem}
 .pcard .i{flex:1;min-width:0}
 .pcard b{display:block;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -291,7 +314,7 @@ code{background:#f4f0e3;padding:.1rem .35rem;border-radius:.3rem;font-size:.9em}
   <div class="brand"><img src="logo-mark.png" alt=""><div><b id="brandT">LEADERSHIP IN THE FIELD</b><small id="brandS">Engagements board · Premium</small></div></div>
   <nav class="tabs" id="tabs"></nav>
   <button class="tbtn" id="btnEdit" title="Засах / харах горим"></button>
-  <button class="tbtn" id="btnFull" title="Бүтэн дэлгэц (MAXHUB)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Бүтэн дэлгэц</button>
+  <button class="tbtn" id="btnFull" title="Бүтэн дэлгэц (MAXHUB)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="fullT">Display Mode</span></button>
 </header>
 <div class="sub">
   <div class="datenav">
@@ -303,6 +326,7 @@ code{background:#f4f0e3;padding:.1rem .35rem;border-radius:.3rem;font-size:.9em}
   <div class="wk" id="wkLabel"></div>
   <div class="sp"></div>
   <div class="sync" id="sync"><span class="dot"></span><span>…</span></div>
+  <button class="sbtn light ed" id="btnSave">💾 Хадгалах</button>
   <button class="sbtn light" id="btnBackup">⬇ Backup</button>
   <button class="sbtn light" id="btnRestore">⬆ Restore</button>
   <button class="sbtn" id="btnLogin"></button>
@@ -356,12 +380,12 @@ const defMonth = () => ({ prio:{}, qual:{} });
 /* ================= state ================= */
 const S = {
   date: new Date(), tab: localStorage.getItem('lif:tab') || 'dash',
-  edit: localStorage.getItem('lif:edit') !== '0',
+  edit: localStorage.getItem('lif:edit') === '1', display: false, gridDraw: false,
   user: null, isAdmin: false, cloud: false,
   docs: {},            // key -> {data, t}
   people: [],          // [{id,name,role,dept,photo}]
   sync: 'local', dirty: new Set(), drawing: false, needRender: false,
-  pen: { mode:'pen', color:'#1d1d1b', marker:'SI' }
+  pen: { mode:'pen', color:'#1d1d1b', marker:'SI', inkFor:'' }
 };
 
 /* ================= storage ================= */
@@ -398,6 +422,13 @@ const monthKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
 const curWeek = () => getDoc('week:'+weekKey(S.date), defWeek);
 const curMonth = () => getDoc('month:'+monthKey(S.date), defMonth);
 const wkey = () => 'week:'+weekKey(S.date);
+// Чиглүүлэгч — долоо хоног бүр тусдаа; хоосон бол өмнөх долоо хоногийнхыг авна
+function leadersFor(){
+  const w = curWeek(); if(Array.isArray(w.leaders)) return w.leaders;
+  const cur = wkey(); const prev = Object.keys(S.docs).filter(k => k.startsWith('week:') && k < cur && Array.isArray(S.docs[k].data?.leaders)).sort().pop();
+  return prev ? S.docs[prev].data.leaders.slice() : settings().leaders.slice();
+}
+function setLeaders(list){ curWeek().leaders = list; commit(wkey()); }
 const mkey = () => 'month:'+monthKey(S.date);
 
 /* ================= cloud sync ================= */
@@ -502,7 +533,9 @@ function allPeople(){
   return [...base, ...fl];
 }
 function personByName(n){ const all = allPeople(); return all.find(p => p.name === n) || matchPerson(n, all); }
+const photoOf = n => (peek('photos', () => ({})).map || {})[normName(n)] || '';
 function avatar(p, cls=''){
+  if(p && !p.photo && p.name){ const ph = photoOf(p.name); if(ph) p = {...p, photo:ph}; }
   if(p?.photo) return `<img class="av ${cls}" src="${esc(p.photo)}" alt="" loading="lazy">`;
   return `<span class="av ${cls}">${esc(initials(p?.name).toUpperCase())}</span>`;
 }
@@ -620,7 +653,7 @@ function peopleListHTML(limit){
 
 function meetingPeopleHTML(big){
   const m = curWeek().meeting;
-  return `<div class="cell" style="margin-bottom:.4rem">${(m.people||[]).map(n => `<button class="pc ok" data-mrm="${esc(n)}"><span class="tx">${esc(n)}</span>${S.edit?' <span class="st" style="color:var(--mut)">×</span>':''}</button>`).join('')}<button class="add" data-madd="1">+</button></div>`;
+  return (!big && m.text ? `<div class="mtext">${esc(m.text)}</div>` : '') + `<div class="cell" style="margin-bottom:.4rem">${(m.people||[]).map(n => `<button class="pc ok" data-mrm="${esc(n)}"><span class="tx">${esc(n)}</span>${S.edit?' <span class="st" style="color:var(--mut)">×</span>':''}</button>`).join('')}<button class="add" data-madd="1">+</button></div>`;
 }
 
 function risksHTML(compact){
@@ -648,7 +681,7 @@ function mapHTML(mini){
 function viewDash(){
   const w = curWeek(), st = weekStats(w), m = curMonth(), p = calCount(m.prio), q = calCount(m.qual);
   const crit = (peek('risks', ()=>({list:[]})).list||[]).filter(r => !r.closed && r.level==='crit').length;
-  const ldrs = settings().leaders;
+  const ldrs = leadersFor();
   const kpis = `<div class="kpis">
     <div class="kpi"><div class="v"><span class="g">${p.g}</span>/<span class="r">${p.r}</span></div><div class="l">1 Чухалчлах · G/R (сар)</div></div>
     <div class="kpi"><div class="v"><span class="g">${q.g}</span>/<span class="r">${q.r}</span></div><div class="l">2 Чанар · G/R (сар)</div></div>
@@ -656,19 +689,19 @@ function viewDash(){
     <div class="kpi"><div class="v">${st.rate===null?'—':st.rate+'%'}</div><div class="l">Гүйцэтгэл</div></div>
     <div class="kpi"><div class="v">${st.people}</div><div class="l">Оролцсон хүн</div></div>
     <div class="kpi ${crit?'crit':''}"><div class="v">${crit}</div><div class="l">Критик эрсдэл</div></div>
-    <div class="leaders"><span class="lt">Чиглүүлэгч</span><div class="ll">${ldrs.length ? ldrs.map(n => { const pp = personByName(n) || {name:n}; return `<div class="ldr">${avatar(pp,'sm')}<div><b>${esc(n)}</b><small>${esc(pp.role||'')}</small></div></div>`; }).join('') : `<span class="note">${S.edit?'Тохиргоо → Чиглүүлэгч нэмнэ':'—'}</span>`}</div></div>
+    <div class="leaders"><span class="lt">Чиглүүлэгч</span><div class="ll">${ldrs.length ? ldrs.map(n => { const pp = personByName(n) || {name:n}; return `<div class="ldr">${avatar(pp,'sm')}<div><b>${esc(n)}</b><small>${esc(pp.role||'')}</small></div>${S.edit?`<button class="lx" data-wlrm="${esc(n)}" aria-label="Хасах">×</button>`:''}</div>`; }).join('') : `<span class="note">${S.edit?'“+” дарж энэ долоо хоногийн чиглүүлэгчийг нэмнэ':'—'}</span>`}${S.edit && ldrs.length < 12 ? '<button class="add" data-wladd="1" style="flex:none">+</button>' : ''}</div></div>
   </div>`;
   return `<div class="dash">${kpis}
     <div class="colL">
       <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {head:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {head:'qual'})}</div>
       ${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'grow', more:'people'})}
     </div>
-    <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridHTML(), {cls:'grow', more:'grid', right:`<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
+    <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridBody(), {cls:'grow', more:'grid', right: gridTools() + `<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
     <div class="colR">
       <div class="rtop">
         ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {head:'sched'})}
         ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:4rem"></div>`, {head:'meet'})}
-        ${panel('5','Эрсдэл', risksHTML(true), {head:'risk'})}
+        ${panel('5','Эрсдэл', (peek(dkey(), ()=>({})).risk ? `<div class="mtext risk">${esc(peek(dkey(), ()=>({})).risk)}</div>` : '') + risksHTML(true), {head:'risk'})}
       </div>
       ${panel('8','Field Map', `<div class="mapfit">${mapHTML(true)}</div>`, {cls:'grow', more:'map'})}
     </div>
@@ -680,12 +713,22 @@ function viewCal(kind, num, title){
     ${panel('', 'Сарын дүн', `<div class="kpis" style="flex-wrap:wrap"><div class="kpi"><div class="v g" style="color:var(--ok)">${c.g}</div><div class="l">Green өдөр</div></div><div class="kpi"><div class="v" style="color:var(--bad)">${c.r}</div><div class="l">Red өдөр</div></div><div class="kpi"><div class="v">${c.g+c.r ? Math.round(c.g*100/(c.g+c.r))+'%' : '—'}</div><div class="l">Green хувь</div></div></div>
       <div class="fld" style="margin-top:1rem"><label>Тайлбар / тэмдэглэл (энэ сар)</label><textarea class="inp" rows="8" data-note="${kind}" ${S.edit?'':'readonly'}>${esc((curMonth().notes||{})[kind]||'')}</textarea></div>`, {cls:'full'})}</div>`;
 }
+function gridTools(){
+  if(!S.edit) return '';
+  const pens = ['#1d1d1b','#dc2626','#16a34a'];
+  return `<button class="more ${S.gridDraw?'on':''}" data-gdraw="1">${S.gridDraw?'✓ Дуусгах':'✎ Зурах'}</button>` + (S.gridDraw ? pens.map(c => `<button class="pen sm ${S.pen.mode==='pen'&&S.pen.color===c?'sel':''}" style="background:${c}" data-pen="${c}" aria-label="Өнгө"></button>`).join('') + `<button class="more" data-undo="grid">↶</button><button class="more" data-clear="grid" title="Бүгдийг арилгах">⌫</button>` : '');
+}
+function gridBody(){ return gridHTML() + `<div class="inkover ${S.gridDraw && S.edit ? 'on' : ''}" id="inkGrid"></div>`; }
 function viewGrid(){
   const st = weekStats(curWeek());
-  return `<div class="big-grid full">${panel('4', 'Мэдээлэл — Leadership in the Field engagements', gridHTML(), {cls:'full', right:`<span class="chip-s">1-р: ${st.c1.g} ✓ / ${st.c1.r} ✗ · 2-р: ${st.c2.g} ✓ / ${st.c2.r} ✗ · ${st.ok+st.miss+st.plan} хүн</span><span class="note" style="margin-left:.6rem">${S.edit?'Нүдэнд дарж нэр сонгох · жижиг нүд: хоосон → ✓ → ✗':''}</span>`})}</div>`;
+  return `<div class="big-grid full">${panel('4', 'Мэдээлэл — Leadership in the Field engagements', gridBody(), {cls:'full', right: gridTools() + (S.edit ? `<button class="more" data-gximp="1">⬆ Excel</button>` : '') + `<button class="more" data-gxexp="1">⬇ Excel</button>` +`<span class="chip-s">1-р: ${st.c1.g} ✓ / ${st.c1.r} ✗ · 2-р: ${st.c2.g} ✓ / ${st.c2.r} ✗ · ${st.ok+st.miss+st.plan} хүн</span><span class="note" style="margin-left:.6rem">${S.edit?'Нүдэнд дарж нэр сонгох · жижиг нүд: хоосон → ✓ → ✗':''}</span>`})}</div>`;
 }
 function viewMeet(){
-  return `<div class="two" style="grid-template-columns:1fr 2fr">${panel('3','Хурал хийх хүмүүс', meetingPeopleHTML(true) + `<p class="note">Энэ долоо хоногт хурал / ярилцлага хийх хүмүүс. “+” дарж жагсаалтаас нэмнэ.</p>`, {cls:'full'})}
+  const m = curWeek().meeting;
+  return `<div class="two" style="grid-template-columns:1fr 2fr">${panel('3','Хурал хийх хүмүүс', meetingPeopleHTML(true) + `<p class="note">Энэ долоо хоногт хурал / ярилцлага хийх хүмүүс. “+” дарж жагсаалтаас нэмнэ.</p>
+      <div class="fld"><label>Өндөр эрсдэлтэй ажлын төлөвлөгөө / тэмдэглэл (7 хоног)</label><textarea class="inp" rows="6" data-wtext="meet" ${S.edit?'':'readonly'}>${esc(m.text||'')}</textarea></div>
+      <div style="height:14rem">${m.img ? `<img class="imgbox" src="${m.img}" alt="">` : '<div class="empty"><div><b>Зураг оруулаагүй</b></div></div>'}</div>
+      ${S.edit?`<div class="bar" style="margin-top:.5rem"><button class="btn" data-wimg="meet">Зураг оруулах</button>${m.img?'<button class="btn danger" data-wimgrm="meet">Устгах</button>':''}</div>`:''}`, {cls:'full'})}
     ${panel('', 'Гараар бичих хэсэг', inkTools() + `<div class="inkwrap" id="inkMeet" style="height:calc(100% - 3.6rem)"></div>`, {cls:'full'})}</div>`;
 }
 function inkTools(markers){
@@ -700,13 +743,15 @@ function inkTools(markers){
     <button class="btn danger" data-clear="${markers?'map':'meet'}">Бүгдийг арилгах</button>
   </div>`;
 }
+const dkey = () => 'day:' + ymd(S.date);
 function viewRisk(){
-  return `<div class="two" style="grid-template-columns:2fr 1fr">${panel('5','Эрсдэлийн бүртгэл', (S.edit ? `<form class="bar" id="riskForm">
+  const dd = peek(dkey(), () => ({}));
+  return `<div class="two" style="grid-template-columns:2fr 1fr">${panel('5','Critical / Fatality Risk', `<div class="fld"><label>Өдрийн мэдээлэл — ${S.date.getFullYear()}.${pad(S.date.getMonth()+1)}.${pad(S.date.getDate())} (${DOWL[S.date.getDay()]})</label><textarea class="inp" rows="4" data-dtext="risk" ${S.edit?'':'readonly'} placeholder="Өнөөдрийн критик эрсдэл, анхааруулга…">${esc(dd.risk||'')}</textarea></div><div class="grp">Эрсдэлийн бүртгэл</div>` + (S.edit ? `<form class="bar" id="riskForm">
       <input class="inp" name="text" placeholder="Эрсдэлийн тодорхойлолт" required style="flex:2;min-width:16rem">
       <select class="inp" name="level"><option value="crit">Критик</option><option value="high">Өндөр</option><option value="med" selected>Дунд</option><option value="low">Бага</option></select>
       <input class="inp" name="area" placeholder="Байршил / алба" style="flex:1;min-width:9rem">
       <input class="inp" name="owner" placeholder="Хариуцагч" style="flex:1;min-width:9rem">
-      <button class="btn pri">+ Нэмэх</button></form>` : '') + (risksHTML(false) || '<div class="empty"><div><b>Эрсдэл бүртгээгүй</b></div></div>'), {cls:'full'})}
+      <button class="btn pri">+ Нэмэх</button></form>` : '') + (risksHTML(false) || '<div class="empty" style="height:auto;min-height:8rem"><div><b>Эрсдэл бүртгээгүй</b></div></div>'), {cls:'full'})}
     ${panel('', 'Зураг / QR', imgDocHTML('riskimg', 'Зураг оруулаагүй', 'QR код, зурагт хуудас г.м.') + (S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn" data-upimg="riskimg">Зураг оруулах</button><button class="btn danger" data-rmimg="riskimg">Устгах</button></div>`:''), {cls:'full'})}</div>`;
 }
 function viewPeople(){
@@ -723,7 +768,7 @@ function viewPeople(){
   ps.sort((a,b) => ((st.perName[b.name]?.ok||0) - (st.perName[a.name]?.ok||0)) || a.name.localeCompare(b.name));
   const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
   return panel('6', mode==='feat' ? `Онцлох ярилцлага (${ps.length})` : `Хүмүүс (${ps.length})`, tb + (mode==='feat' && !fl.length ? `<div class="empty" style="height:auto;margin-bottom:.6rem"><div><b>Онцлох жагсаалт хоосон</b>“Excel-ээс оруулах” товчоор жагсаалтаа оруулна. Нэр, албан тушаал, алба баганатай ямар ч Excel ажиллана.</div></div>` : '') + `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ N = нийт авсан од · ★ дарахад өнөөдрийн онцлох ярилцлагад од нэмнэ</span></div>
-    ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}" title="Энэ долоо хоногт хийсэн engagement">${s?.ok||0}</span>${(si => `<span class="scnt ${si.n?'':'z'}" title="Нийт авсан од">★ ${si.n}</span><button class="star ${si.today?'on':''}" data-star="${esc(p.name)}">★</button>`)(starInfo(p.name))}</div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
+    ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${S.edit ? `<button class="avbtn" data-photo="${esc(p.name)}" title="Зураг оруулах">${avatar(p,'lg')}<i>📷</i></button>` : avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}" title="Энэ долоо хоногт хийсэн engagement">${s?.ok||0}</span>${(si => `<span class="scnt ${si.n?'':'z'}" title="Нийт авсан од">★ ${si.n}</span><button class="star ${si.today?'on':''}" data-star="${esc(p.name)}">★</button>`)(starInfo(p.name))}</div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
 }
 function viewSched(){
   return panel('7', 'Main Schedule / Хуваарь', `<div style="height:calc(100% - 3.6rem)">${imgDocHTML('schedule','Хуваарийн зураг оруулаагүй','Хуваарийн зураг, PDF-ийн screenshot г.м.')}</div>${S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn y" data-upimg="schedule">Зураг оруулах / солих</button><button class="btn danger" data-rmimg="schedule">Устгах</button></div>`:''}`, {cls:'full'});
@@ -741,7 +786,11 @@ function viewSet(){
       <div class="row"><div class="fld" style="flex:1"><label>Гарчиг</label><input class="inp" id="setTitle" value="${esc(s.title)}"></div>
       <div class="fld"><label>Долоо хоног эхлэх өдөр</label><select class="inp" id="setWs">${[6,0,1].map(d=>`<option value="${d}" ${s.weekStart==d?'selected':''}>${DOWL[d]}</option>`).join('')}</select></div></div>
     </div>
-    <div class="set-sec"><h3>Чиглүүлэгч (Leaders)</h3>
+    <div class="set-sec"><h3>Засах горимын PIN</h3>
+      <div class="row"><div class="fld"><label>PIN (4–8 оронтой тоо, хоосон бол PIN шаардахгүй)</label><input class="inp" id="setPin" inputmode="numeric" maxlength="8" value="${esc(s.pin ?? '1234')}" style="width:12rem"></div></div>
+      <p class="note">MAXHUB дээр “Харах горим”-оос “Засах горим” руу шилжихэд PIN асууна. Анхдагч PIN: 1234.</p>
+    </div>
+    <div class="set-sec"><h3>Үндсэн чиглүүлэгч</h3><p class="note">Долоо хоног бүрийн чиглүүлэгчийг Dashboard дээр шууд солино. Энд байгаа жагсаалт нь өмнөх долоо хоногийн бүртгэлгүй үед анхдагчаар ашиглагдана.</p>
       <div class="cell" style="gap:.4rem">${s.leaders.map(n=>`<button class="pc ok" data-lrm="${esc(n)}"><span class="tx">${esc(n)}</span> <span class="st" style="color:var(--mut)">×</span></button>`).join('')}<button class="btn" data-ladd="1">+ Нэмэх</button></div>
     </div>
     <div class="set-sec"><h3>Engagement төрлүүд</h3>
@@ -777,6 +826,7 @@ function render(){
   const im = $('#inkMeet'); if(im) inks.push(new Ink(im, () => curWeek().meeting.ink, true, 'meet'));
   const mapMini = $('#mapMini'); if(mapMini) inks.push(new Ink(mapMini, () => curWeek().map.ink, false));
   fitGrid();
+  const ig = $('#inkGrid'); if(ig) inks.push(new Ink(ig, () => (curWeek().gridInk = curWeek().gridInk || []), S.gridDraw && S.edit, 'grid'));
   const mapMain = $('#mapMain'); if(mapMain) inks.push(new Ink(mapMain, () => curWeek().map.ink, true, 'map'));
 }
 
@@ -925,10 +975,10 @@ function pickSlot(code, day, r){
 }
 
 /* ================= image upload ================= */
-function pickImage(cb){
+function pickImage(cb, maxPx){
   const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
   inp.onchange = () => { const f = inp.files[0]; if(!f) return; const rd = new FileReader(); rd.onload = () => { const img = new Image(); img.onload = () => {
-    const max = 1800, sc = Math.min(1, max/Math.max(img.width, img.height));
+    const max = maxPx || 1800, sc = Math.min(1, max/Math.max(img.width, img.height));
     const c = document.createElement('canvas'); c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
     const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
     cb(c.toDataURL('image/jpeg', .82));
@@ -1053,6 +1103,101 @@ async function featTemplate(){
   }catch(err){ toast(err.message, true); }
 }
 
+/* ================= 4 Мэдээлэл ⇄ Excel (husnegt.xlsx загвар) ================= */
+const EN_DAYS = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const MN_DAYS = ['ням','даваа','мягмар','лхагва','пүрэв','баасан','бямба'];
+const keyN = t => String(t||'').toLowerCase().replace(/[^a-zа-яөүё0-9]/g,'');
+function dayOfHeader(v){ const k = keyN(v); if(!k) return -1; for(let i=0;i<7;i++){ if(k.startsWith(EN_DAYS[i].slice(0,3)) && k.length <= 12 || k.startsWith(MN_DAYS[i])) return i; } return -1; }
+function typeOfBand(v, types){
+  const k = keyN(v); if(k.length < 2) return null;
+  return types.find(t => { const a = keyN(t.name), c = keyN(t.code); return k === a || k === c || (k.length >= 6 && (a.startsWith(k.slice(0,8)) || k.startsWith(a.slice(0,8)))); }) || null;
+}
+const markOf = v => { const t = String(v ?? '').trim().toLowerCase(); if(!t) return ''; if(/^(✓|✔|☑|v|√|1|ok|yes|y|тийм|done|g|green)$/.test(t)) return 'ok'; if(/^(✗|✘|x|×|0|no|n|үгүй|r|red)$/.test(t)) return 'miss'; return ''; };
+function parseWeekSheet(XLSX, wb){
+  const types = settings().types, ds = weekDays(S.date);
+  for(const sn of wb.SheetNames){
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header:1, defval:'', raw:false });
+    // гарчгийн мөр: 3+ өдрийн нэр
+    let hr = -1, cols = {};
+    for(let r=0; r<Math.min(rows.length, 15) && hr<0; r++){ const m = {}; (rows[r]||[]).forEach((v,c) => { const d = dayOfHeader(v); if(d >= 0 && m[d] === undefined) m[d] = c; }); if(Object.keys(m).length >= 3){ hr = r; cols = m; } }
+    if(hr < 0) continue;
+    // өдөр (getDay) → энэ долоо хоногийн индекс
+    const idxOf = {}; ds.forEach((d,i) => idxOf[d.getDay()] = i);
+    // бүлгийн мөрүүд
+    const bands = [];
+    for(let r=hr+1; r<rows.length; r++){ const cells = (rows[r]||[]).filter(v => String(v).trim()); if(cells.length === 1){ const t = typeOfBand(cells[0], types); if(t) bands.push({ r, t }); } }
+    if(!bands.length) continue;
+    const grid = {}; let n = 0, marks = 0;
+    bands.forEach((b, bi) => {
+      const end = bi+1 < bands.length ? bands[bi+1].r : rows.length;
+      let slot = 0;
+      for(let r=b.r+1; r<end; r+=2, slot++){
+        const top = rows[r]||[], bot = rows[r+1]||[];
+        for(const [dw, c] of Object.entries(cols)){
+          const di = idxOf[dw]; if(di === undefined) continue;
+          const name = String(top[c] ?? '').trim() || String(bot[c] ?? '').trim();
+          if(!name) continue;
+          const a = markOf(top[c+1]), bb = markOf(bot[c+1]); if(a) marks++; if(bb) marks++;
+          const arr = ((grid[b.t.code] = grid[b.t.code] || {})[di] = (grid[b.t.code] || {})[di] || []);
+          while(arr.length < slot) arr.push(null);
+          arr[slot] = { id:uid(), name, a, b:bb, note:'' }; n++;
+        }
+      }
+    });
+    if(n) return { sheet:sn, grid, n, marks, types:bands.map(b => b.t.name) };
+  }
+  return null;
+}
+function importWeekExcel(){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls,.xlsm';
+  inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{
+      const XLSX = await loadXLSX(); const wb = XLSX.read(await f.arrayBuffer(), { type:'array' });
+      const res = parseWeekSheet(XLSX, wb);
+      if(!res){ toast('Өдрийн гарчиг (Saturday…Friday) болон төрлийн мөр олдсонгүй', true); return; }
+      const matched = Object.values(res.grid).flatMap(t => Object.values(t).flat()).filter(e => e && matchPerson(e.name)).length;
+      openModal(`<div class="mh"><h2>4 Мэдээлэл — Excel оруулах</h2><button class="x" data-close="1">×</button></div>
+        <div class="mb"><p class="note"><b>${esc(f.name)}</b> · хуудас “${esc(res.sheet)}” → <b>${weekKey(S.date)}</b> долоо хоног</p>
+        <div class="kpis" style="margin:.6rem 0"><div class="kpi"><div class="v">${res.n}</div><div class="l">Нэр бүхий нүд</div></div><div class="kpi"><div class="v" style="color:var(--ok)">${matched}</div><div class="l">Ажилтантай таарсан</div></div><div class="kpi"><div class="v">${res.marks}</div><div class="l">✓ / ✗ тэмдэг</div></div></div>
+        <p class="note">Олдсон төрөл: ${res.types.map(esc).join(', ')}</p>
+        <p class="note">Энэ долоо хоногийн одоогийн хүснэгтийн нэрс солигдоно. Зураас, бусад хэсэг хөндөгдөхгүй.</p></div>
+        <div class="mf"><button class="btn" data-close="1">Болих</button><button class="btn pri" id="wxOk">Оруулах</button></div>`, 'sm');
+      $('#wxOk').onclick = () => { const w = curWeek(); w.grid = res.grid; closeModal(); commit(wkey()); toast(`${res.n} нүд оруулсан`); };
+    }catch(err){ console.warn(err); toast(err.message || 'Файл уншиж чадсангүй', true); }
+  };
+  inp.click();
+}
+async function exportWeekExcel(){
+  try{
+    const XLSX = await loadXLSX();
+    const w = curWeek(), ds = weekDays(S.date), types = settings().types;
+    const DEN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const sym = v => v === 'ok' ? '✓' : v === 'miss' ? '✗' : '';
+    const aoa = [], merges = [];
+    const head = []; ds.forEach((d,i) => { head.push(`${DEN[d.getDay()]} ${d.getMonth()+1}/${d.getDate()}`, ''); merges.push({ s:{r:0,c:i*2}, e:{r:0,c:i*2+1} }); }); aoa.push(head);
+    for(const t of types){
+      const r0 = aoa.length; aoa.push([t.name, ...Array(13).fill('')]); merges.push({ s:{r:r0,c:0}, e:{r:r0,c:13} });
+      const n = rowsFor(w, t);
+      for(let k=0; k<n; k++){
+        const top = [], bot = [];
+        ds.forEach((d,i) => { const e = ((w.grid[t.code]||{})[i]||[])[k]; top.push(e?.name||'', sym(e?.a)); bot.push('', sym(e?.b)); merges.push({ s:{r:aoa.length,c:i*2}, e:{r:aoa.length+1,c:i*2} }); });
+        aoa.push(top, bot);
+      }
+    }
+    const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!merges'] = merges; ws['!cols'] = ds.flatMap(() => [{wch:20},{wch:4}]);
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, weekKey(S.date));
+    // Онцлох ярилцлагын од
+    const log = starLog().slice().sort((a,b) => (a.date < b.date ? -1 : 1));
+    const tot = {}; log.forEach(e => tot[e.name] = (tot[e.name]||new Set()).add(e.date));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Нэр','Нийт од'], ...Object.entries(tot).map(([n,s]) => [n, s.size]).sort((a,b) => b[1]-a[1]), [], ['Огноо','Нэр'], ...log.map(e => [e.date, e.name])]), 'Онцлох од');
+    // 1/2 сарын G/R
+    const m = curMonth(), days = new Date(S.date.getFullYear(), S.date.getMonth()+1, 0).getDate(), lab = v => v==='g'?'GREEN':v==='r'?'RED':'';
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Өдөр','1 Чухалчлах','2 Чанар'], ...[...Array(days)].map((_,i) => [`${monthKey(S.date)}-${pad(i+1)}`, lab((m.prio||{})[i+1]), lab((m.qual||{})[i+1])])]), monthKey(S.date));
+    XLSX.writeFile(wb, `LIF-${weekKey(S.date)}.xlsx`);
+  }catch(err){ toast(err.message, true); }
+}
+
 /* ================= login ================= */
 function loginModal(){
   if(!sb){ toast('Supabase сан ачаалж чадсангүй (интернэт шалгана уу)', true); return; }
@@ -1075,7 +1220,7 @@ document.addEventListener('click', e => {
   const d = t.dataset;
   if(d.close){ closeModal(); return; }
   if(d.tab){ S.tab = d.tab; localStorage.setItem('lif:tab', S.tab); render(); $('#view').scrollTop = 0; return; }
-  if(!S.edit && (d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
+  if(!S.edit && (d.wladd||d.wlrm||d.photo||d.gdraw||d.gximp||d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
   if(d.cal){ const m = curMonth(), o = m[d.cal] = m[d.cal]||{}; o[d.day] = ({'':'g', g:'r', r:''})[o[d.day]||'']; if(!o[d.day]) delete o[d.day]; commit(mkey()); return; }
   if(d.slot){ const [code, day, r] = d.slot.split('|'); if(longPressed){ longPressed = false; return; }
     const e2 = ((curWeek().grid[code]||{})[day]||[])[+r];
@@ -1091,6 +1236,15 @@ document.addEventListener('click', e => {
   if(d.unstar){ const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log.filter(x => x.id !== d.unstar); hideStarPop(); commit('stars'); toast('Одыг буцаалаа'); return; }
   if(d.madd){ pickPerson({ title:'Хурал хийх хүн нэмэх', multi:true, onPick:n => { const m = curWeek().meeting; if(!m.people.includes(n)) m.people.push(n); commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
   if(d.mrm){ const m = curWeek().meeting; m.people = m.people.filter(x=>x!==d.mrm); commit(wkey()); return; }
+  if(d.wladd){ pickPerson({ title:'Энэ долоо хоногийн чиглүүлэгч', multi:true, onPick:n => { const l = leadersFor(); if(!l.includes(n)) l.push(n); curWeek().leaders = l; commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
+  if(d.wlrm){ setLeaders(leadersFor().filter(x => x !== d.wlrm)); return; }
+  if(d.wimg){ pickImage(url => { curWeek().meeting.img = url; commit(wkey()); toast('Зураг хадгаллаа'); }); return; }
+  if(d.wimgrm){ if(!confirm('Зургийг устгах уу?')) return; curWeek().meeting.img = null; commit(wkey()); return; }
+  if(d.photo){ pickImage(url => { const ph = getDoc('photos', () => ({map:{}})); ph.map = ph.map || {}; ph.map[normName(d.photo)] = url; commit('photos'); toast('Зураг хадгаллаа'); }, 320); return; }
+  if(d.photorm){ const ph = getDoc('photos', () => ({map:{}})); delete (ph.map||{})[normName(d.photorm)]; commit('photos'); return; }
+  if(d.gdraw){ S.gridDraw = !S.gridDraw; if(S.gridDraw){ S.pen.mode = 'pen'; if(!['#1d1d1b','#dc2626','#16a34a'].includes(S.pen.color)) S.pen.color = '#1d1d1b'; } render(); return; }
+  if(d.gximp){ importWeekExcel(); return; }
+  if(d.gxexp){ exportWeekExcel(); return; }
   if(d.pmode){ S.pmode = d.pmode; render(); return; }
   if(d.featimp){ importFeatured(); return; }
   if(d.feattpl){ featTemplate(); return; }
@@ -1098,6 +1252,8 @@ document.addEventListener('click', e => {
   if(d.pen){ S.pen.mode = 'pen'; S.pen.color = d.pen; render(); return; }
   if(d.marker){ S.pen.mode = 'marker'; S.pen.marker = d.marker; render(); return; }
   if(d.erase){ S.pen.mode = 'erase'; render(); return; }
+  if(d.undo === 'grid'){ const w = curWeek(); (w.gridInk = w.gridInk||[]).pop(); commit(wkey()); return; }
+  if(d.clear === 'grid'){ if(!confirm('4-р хэсгийн бүх зурааслыг арилгах уу?')) return; curWeek().gridInk = []; commit(wkey()); return; }
   if(d.undo){ const w = curWeek(), o = d.undo==='map' ? w.map : w.meeting;
     if(d.undo==='map'){ // сүүлд нэмсэн зураас эсвэл тэмдэг
       const lastInk = o.ink.length, lastMk = o.markers.length;
@@ -1149,11 +1305,14 @@ document.addEventListener('submit', e => {
 document.addEventListener('change', e => {
   const d = e.target.dataset;
   if(e.target.id === 'setTitle'){ settings().title = e.target.value; commit('settings'); }
+  if(e.target.id === 'setPin'){ const v = e.target.value.trim(); if(v && !/^\d{4,8}$/.test(v)){ toast('PIN 4–8 оронтой тоо байна', true); render(); return; } settings().pin = v; commit('settings'); toast(v ? 'PIN шинэчлэгдлээ' : 'PIN унтраалаа'); }
   if(e.target.id === 'setWs'){ settings().weekStart = +e.target.value; commit('settings'); }
   if(d.tcode !== undefined){ settings().types[+d.tcode].code = e.target.value.trim().toUpperCase() || 'X'; commit('settings'); }
   if(d.tname !== undefined){ settings().types[+d.tname].name = e.target.value; commit('settings'); }
   if(d.tslots !== undefined){ settings().types[+d.tslots].slots = Math.max(1, Math.min(10, +e.target.value || 1)); commit('settings'); }
   if(d.tcolor !== undefined){ settings().types[+d.tcolor].color = e.target.value; commit('settings'); }
+  if(d.wtext){ const w = curWeek(); w.meeting.text = e.target.value; commit(wkey(), {noRender:true}); }
+  if(d.dtext){ const dd = getDoc(dkey(), () => ({})); dd[d.dtext] = e.target.value; commit(dkey(), {noRender:true}); }
   if(d.note){ const m = curMonth(); m.notes = m.notes||{}; m.notes[d.note] = e.target.value; commit(mkey(), {noRender:true}); }
   if(e.target.id === 'pdept'){ S.pdept = e.target.value; render(); }
 });
@@ -1163,9 +1322,40 @@ $('#prevW').onclick = () => { S.date = addDays(S.date, -7); render(); };
 $('#nextW').onclick = () => { S.date = addDays(S.date, 7); render(); };
 $('#todayB').onclick = () => { S.date = new Date(); render(); };
 $('#dateIn').onchange = e => { if(e.target.value){ S.date = parseYmd(e.target.value); render(); } };
-$('#btnEdit').onclick = () => { S.edit = !S.edit; localStorage.setItem('lif:edit', S.edit?'1':'0'); render(); };
-$('#btnFull').onclick = () => { const d = document; if(!d.fullscreenElement) (d.documentElement.requestFullscreen||d.documentElement.webkitRequestFullscreen)?.call(d.documentElement); else d.exitFullscreen?.(); };
+function setEdit(on){ S.edit = on; if(!on) S.gridDraw = false; localStorage.setItem('lif:edit', on?'1':'0'); render(); }
+$('#btnEdit').onclick = () => { if(S.edit) return setEdit(false); const pin = settings().pin ?? '1234'; if(!pin) return setEdit(true); pinModal(pin); };
+function pinModal(pin){
+  let v = '';
+  const draw = () => { $('#pinDots').innerHTML = [...Array(Math.max(4, pin.length))].map((_,i) => `<i class="${i < v.length ? 'on' : ''}"></i>`).join(''); };
+  openModal(`<div class="mh"><h2>Засах горим — PIN</h2><button class="x" data-close="1">×</button></div>
+    <div class="mb" style="text-align:center"><div class="pindots" id="pinDots"></div>
+    <div class="pinpad">${[1,2,3,4,5,6,7,8,9,'C',0,'⌫'].map(k => `<button data-pk="${k}">${k}</button>`).join('')}</div></div>`, 'sm');
+  draw();
+  const press = k => {
+    if(k === 'C') v = ''; else if(k === '⌫') v = v.slice(0,-1); else if(v.length < 8) v += k;
+    draw();
+    if(v.length >= pin.length){ if(v === pin){ closeModal(); setEdit(true); toast('Засах горим нээгдлээ'); } else { $('#pinDots').classList.add('bad'); setTimeout(() => { v = ''; draw(); $('#pinDots')?.classList.remove('bad'); }, 450); } }
+  };
+  $('.pinpad').addEventListener('click', e => { const b = e.target.closest('[data-pk]'); if(b) press(b.dataset.pk); });
+  const kd = e => { if(!$('.pinpad')) return document.removeEventListener('keydown', kd); if(/^\d$/.test(e.key)) press(e.key); else if(e.key === 'Backspace') press('⌫'); };
+  document.addEventListener('keydown', kd);
+}
+function setDisplay(on){
+  S.display = on; document.body.classList.toggle('display', on);
+  $('#fullT').textContent = on ? 'Гарах' : 'Display Mode';
+  const de = document.documentElement;
+  if(on){ S.edit = false; S.gridDraw = false; localStorage.setItem('lif:edit','0'); S.tab = 'dash'; try{ (de.requestFullscreen||de.webkitRequestFullscreen)?.call(de)?.catch?.(()=>{}); }catch(e){} }
+  else if(document.fullscreenElement){ document.exitFullscreen?.().catch?.(()=>{}); }
+  render();
+}
+$('#btnFull').onclick = () => setDisplay(!S.display);
+document.addEventListener('fullscreenchange', () => { if(!document.fullscreenElement && S.display) setDisplay(false); });
 $('#btnLogin').onclick = () => { if(S.user){ S.tab='set'; render(); } else loginModal(); };
+$('#btnSave').onclick = async () => {
+  Object.keys(S.docs).forEach(k => saveLocal(k));
+  if(S.cloud){ clearTimeout(pushTimer); await pushDirty(); toast(S.sync === 'ok' ? 'Хадгаллаа (cloud)' : 'Cloud-д хадгалж чадсангүй — дотор хадгалсан', S.sync !== 'ok'); }
+  else toast('Энэ төхөөрөмжид хадгаллаа');
+};
 $('#btnBackup').onclick = () => {
   const out = { app:'lif-board', v:1, at:new Date().toISOString(), docs:S.docs };
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], {type:'application/json'}));
