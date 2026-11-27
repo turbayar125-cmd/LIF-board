@@ -145,7 +145,7 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .eg2 td.nm,.eg2 td.ck{border:1px solid var(--line2);padding:0;height:2.9rem;background:#fff}
 .eg2 td.today{background:#fffbea}
 .slotb{width:100%;height:100%;display:flex;align-items:center;gap:.3rem;padding:0 .4rem;text-align:left;font-weight:700;font-size:.92rem;min-height:2.9rem}
-.slotb .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.slotb .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;letter-spacing:-.01em}
 .slotb .nt{color:var(--mut);font-size:.8rem}
 .slotb.blank .plus{margin:auto;color:#cfc5a8;font-size:1.3rem;font-weight:800}
 .view .slotb.blank .plus{display:none}
@@ -539,13 +539,20 @@ function calHTML(kind, big){
 }
 function calBadge(kind){ const c = calCount(curMonth()[kind]); return `<span class="chip-s"><span style="color:var(--ok)">${c.g} G</span> / <span style="color:var(--bad)">${c.r} R</span></span>`; }
 
+// Хүснэгтэд зөвхөн нэр (эхний үг) — давхацвал 2-р үгийн эхний үсэг нэмнэ
+function firstName(n){ n = String(n||'').trim(); const m = n.match(/^[^\s.]{1,3}\.\s*(\S+)/); return m ? m[1] : (n.split(/\s+/)[0] || n); }
+function shortNamer(w){
+  const all = new Set(); for(const t of Object.values(w.grid||{})) for(const arr of Object.values(t)) for(const e of arr||[]) if(e && e.name) all.add(e.name);
+  const cnt = {}; for(const n of all){ const f = firstName(n).toLowerCase(); cnt[f] = (cnt[f]||0) + 1; }
+  return n => { const f = firstName(n); if(cnt[f.toLowerCase()] > 1){ const rest = n.replace(/^[^\s.]{1,3}\.\s*/, '').split(/\s+/).filter(x => x.toLowerCase() !== f.toLowerCase()); const ini = (rest[0]||n)[0]; return ini ? `${f} ${ini}.` : f; } return f; };
+}
 function rowsFor(w, t){
   const g = w.grid[t.code] || {}; let n = Math.max(1, +t.slots || 1, (w.rows||{})[t.code] || 0);
   for(const arr of Object.values(g)) n = Math.max(n, (arr||[]).length);
   return n;
 }
 function gridHTML(){
-  const st = settings(), w = curWeek(), ds = weekDays(S.date), today = ymd(new Date());
+  const st = settings(), w = curWeek(), ds = weekDays(S.date), today = ymd(new Date()), sn = shortNamer(w);
   const DEN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   let h = `<table class="eg2"><colgroup>${ds.map(()=>'<col><col class="ckc">').join('')}</colgroup><thead><tr>`;
   h += ds.map(d => `<th colspan="2" class="${ymd(d)===today?'today':''}">${DOWL[d.getDay()]} <small>${S.tab==='dash'?'':DEN[d.getDay()]+' · '}${d.getMonth()+1}/${d.getDate()}</small></th>`).join('');
@@ -560,7 +567,7 @@ function gridHTML(){
         const ref = `${esc(t.code)}|${i}|${r}`;
         if(e && e.name) slotSt(e);
         const pp = e && e.name ? personByName(e.name) : null;
-        h += `<td class="nm${td}"><button class="slotb ${e&&e.name?'':'blank'}" data-slot="${ref}">${e && e.name ? `${pp?.photo?`<img class="av sm" src="${esc(pp.photo)}" alt="">`:''}<span class="tx">${esc(e.name)}</span>${e.note?'<span class="nt" title="Тэмдэглэлтэй">✎</span>':''}` : (S.edit?'<span class="plus">+</span>':'')}</button></td>`;
+        h += `<td class="nm${td}"><button class="slotb ${e&&e.name?'':'blank'}" data-slot="${ref}">${e && e.name ? `${pp?.photo?`<img class="av sm" src="${esc(pp.photo)}" alt="">`:''}<span class="tx" title="${esc(e.name)}">${esc(sn(e.name))}</span>${e.note?'<span class="nt" title="Тэмдэглэлтэй">✎</span>':''}` : (S.edit?'<span class="plus">+</span>':'')}</button></td>`;
         h += `<td class="ck${td}"><button class="ckb ${e?.a||''}" data-ck="${ref}|a" aria-label="1-р тэмдэглэгээ">${e?.a==='ok'?'✓':e?.a==='miss'?'✗':''}</button><button class="ckb ${e?.b||''}" data-ck="${ref}|b" aria-label="2-р тэмдэглэгээ">${e?.b==='ok'?'✓':e?.b==='miss'?'✗':''}</button></td>`;
       });
       h += '</tr>';
