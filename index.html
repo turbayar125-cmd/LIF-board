@@ -142,21 +142,21 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .eg2 tr.band td{background:#f6f1e1;text-align:center;font-weight:800;font-size:.92rem;padding:.22rem .4rem;border:1px solid var(--line2);position:relative}
 .eg2 tr.band .code{display:inline-block;font-size:.7rem;font-weight:800;color:#fff;border-radius:.3rem;padding:.05rem .35rem;margin-right:.45rem;vertical-align:.08rem}
 .rowadd{position:relative;float:right;font-size:.75rem;font-weight:700;padding:.1rem .5rem;border-radius:.3rem;background:#fff;border:1px solid var(--line2);margin-left:.3rem}
-.eg2 td.nm,.eg2 td.ck{border:1px solid var(--line2);padding:0;height:2.9rem;background:#fff}
+.eg2 td.nm,.eg2 td.ck{border:1px solid var(--line2);padding:0;height:var(--rh,2.9rem);background:#fff}
 .eg2 td.today{background:#fffbea}
-.slotb{width:100%;height:100%;display:flex;align-items:center;gap:.3rem;padding:0 .4rem;text-align:left;font-weight:700;font-size:.92rem;min-height:2.9rem}
+.slotb{width:100%;height:100%;display:flex;align-items:center;gap:.3rem;padding:0 .4rem;text-align:left;font-weight:700;font-size:.92rem;min-height:var(--rh,2.9rem)}
 .slotb .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;letter-spacing:-.01em}
 .slotb .nt{color:var(--mut);font-size:.8rem}
 .slotb.blank .plus{margin:auto;color:#cfc5a8;font-size:1.3rem;font-weight:800}
 .view .slotb.blank .plus{display:none}
 .eg2 td.ck{display:table-cell}
-.ckb{display:block;width:100%;height:50%;min-height:1.45rem;font-weight:900;font-size:1.05rem;line-height:1;border-bottom:1px solid var(--line)}
+.ckb{display:block;width:100%;height:calc(var(--rh,2.9rem) / 2);min-height:1.2rem;font-weight:900;font-size:1.05rem;line-height:1;border-bottom:1px solid var(--line)}
 .ckb:last-child{border-bottom:0}
 .ckb.ok{background:var(--okbg);color:var(--ok)} .ckb.miss{background:var(--badbg);color:var(--bad)}
-.big-grid .eg2 td.nm,.big-grid .eg2 td.ck{height:4rem} .big-grid .slotb{font-size:1.15rem;min-height:4rem} .big-grid .ckb{font-size:1.35rem;min-height:2rem}
+.big-grid .slotb{font-size:1.15rem} .big-grid .ckb{font-size:1.35rem}
 .big-grid .eg2 col.ckc{width:3rem} .big-grid .eg2 th{font-size:1.1rem} .big-grid .eg2 tr.band td{font-size:1.05rem}
 
-.dash .eg2 td.nm,.dash .eg2 td.ck{height:2.5rem} .dash .slotb{min-height:2.5rem;font-size:.85rem;padding:0 .3rem} .dash .ckb{min-height:1.25rem;font-size:.9rem} .dash .eg2 col.ckc{width:1.9rem}
+.dash .slotb{font-size:.85rem;padding:0 .3rem} .dash .ckb{font-size:.9rem} .dash .eg2 col.ckc{width:1.9rem}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -559,7 +559,7 @@ function gridHTML(){
   h += '</tr></thead><tbody>';
   for(const t of st.types){
     const n = rowsFor(w, t);
-    h += `<tr class="band"><td colspan="14"><span class="code" style="background:${esc(t.color)}">${esc(t.code)}</span>${esc(t.name)}${S.edit?`<button class="rowadd" data-rowadd="${esc(t.code)}" title="Энэ долоо хоногт мөр нэмэх">+ мөр</button>${n > Math.max(1,+t.slots||1) ? `<button class="rowadd" data-rowdel="${esc(t.code)}" title="Сүүлийн хоосон мөрийг хасах">− мөр</button>`:''}`:''}</td></tr>`;
+    h += `<tr class="band"><td colspan="14"><span class="code" style="background:${esc(t.color)}">${esc(t.code)}</span>${esc(t.name)}</td></tr>`;
     for(let r=0; r<n; r++){
       h += '<tr class="slot">';
       ds.forEach((d,i) => {
@@ -749,8 +749,23 @@ function render(){
   const mm = $('#inkMeetMini'); if(mm) inks.push(new Ink(mm, () => curWeek().meeting.ink, false));
   const im = $('#inkMeet'); if(im) inks.push(new Ink(im, () => curWeek().meeting.ink, true, 'meet'));
   const mapMini = $('#mapMini'); if(mapMini) inks.push(new Ink(mapMini, () => curWeek().map.ink, false));
+  fitGrid();
   const mapMain = $('#mapMain'); if(mapMain) inks.push(new Ink(mapMain, () => curWeek().map.ink, true, 'map'));
 }
+
+function fitGrid(){
+  document.querySelectorAll('.eg2').forEach(tb => {
+    const pb = tb.closest('.pb'); if(!pb) return;
+    tb.style.setProperty('--rh', '2.4rem');
+    const cs = getComputedStyle(pb), avail = pb.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const head = tb.tHead.offsetHeight; let bands = 0; tb.querySelectorAll('tr.band').forEach(r => bands += r.offsetHeight);
+    const n = tb.querySelectorAll('tr.slot').length; if(!n) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const rh = Math.max(2.4*rem, Math.floor((avail - head - bands - 2) / n));
+    tb.style.setProperty('--rh', rh + 'px');
+  });
+}
+let fitT = null; window.addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitGrid, 120); });
 
 /* ================= Ink ================= */
 class Ink{
@@ -1100,7 +1115,7 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); }
 // шөнө дунд өдөр солигдоход шинэчлэх
 let lastDay = ymd(new Date());
 setInterval(() => { const n = ymd(new Date()); if(n !== lastDay){ if(ymd(S.date) === lastDay) S.date = new Date(); lastDay = n; if(!S.drawing && !$('#modal').classList.contains('open')) render(); } }, 60000);
-window.addEventListener('resize', () => {});
+
 
 /* ================= boot ================= */
 loadLocal();
