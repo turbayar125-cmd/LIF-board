@@ -145,7 +145,7 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .eg2 td.nm,.eg2 td.ck{border:1px solid var(--line2);padding:0;height:var(--rh,2.9rem);background:#fff}
 .eg2 td.today{background:#fffbea}
 .slotb{width:100%;height:100%;display:flex;align-items:center;gap:.3rem;padding:0 .4rem;text-align:left;font-weight:700;font-size:.92rem;min-height:var(--rh,2.9rem)}
-.slotb .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;letter-spacing:-.01em}
+.slotb .tx{overflow:hidden;white-space:nowrap;flex:1;min-width:0;letter-spacing:-.01em;font-size:1.1rem;text-align:center}
 .slotb .nt{color:var(--mut);font-size:.8rem}
 .slotb.blank .plus{margin:auto;color:#cfc5a8;font-size:1.3rem;font-weight:800}
 .view .slotb.blank .plus{display:none}
@@ -153,10 +153,10 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .ckb{display:block;width:100%;height:calc(var(--rh,2.9rem) / 2);min-height:1.2rem;font-weight:900;font-size:1.05rem;line-height:1;border-bottom:1px solid var(--line)}
 .ckb:last-child{border-bottom:0}
 .ckb.ok{background:var(--okbg);color:var(--ok)} .ckb.miss{background:var(--badbg);color:var(--bad)}
-.big-grid .slotb{font-size:1.15rem} .big-grid .ckb{font-size:1.35rem}
+.big-grid .slotb .tx{font-size:1.4rem} .big-grid .ckb{font-size:1.35rem}
 .big-grid .eg2 col.ckc{width:3rem} .big-grid .eg2 th{font-size:1.1rem} .big-grid .eg2 tr.band td{font-size:1.05rem}
 
-.dash .slotb{font-size:.85rem;padding:0 .3rem} .dash .ckb{font-size:.9rem} .dash .eg2 col.ckc{width:1.9rem}
+.dash .slotb{padding:0 .25rem} .dash .ckb{font-size:.9rem} .dash .eg2 col.ckc{width:1.9rem}
 .dash .ph{padding:.4rem .5rem;gap:.3rem} .dash .ph h3{font-size:.98rem;gap:.35rem} .dash .ph h3 .n{min-width:1.4rem;height:1.4rem;font-size:.78rem}
 .dash .pb{padding:.5rem}
 /* people */
@@ -561,7 +561,7 @@ function gridHTML(){
   h += '</tr></thead><tbody>';
   for(const t of st.types){
     const n = rowsFor(w, t);
-    h += `<tr class="band"><td colspan="14"><span class="code" style="background:${esc(t.color)}">${esc(t.code)}</span>${esc(t.name)}</td></tr>`;
+    h += `<tr class="band"><td colspan="14" style="border-top:2px solid ${esc(t.color)}">${esc(t.name)}</td></tr>`;
     for(let r=0; r<n; r++){
       h += '<tr class="slot">';
       ds.forEach((d,i) => {
@@ -766,6 +766,12 @@ function fitGrid(){
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const rh = Math.max(2.4*rem, Math.floor((avail - head - bands - n - 4) / n));
     tb.style.setProperty('--rh', rh + 'px');
+    // нэрийг нүдэндээ бүтэн багтаах
+    tb.querySelectorAll('.slotb .tx').forEach(x => {
+      x.style.fontSize = '';
+      let fs = parseFloat(getComputedStyle(x).fontSize); const min = Math.max(9, rem * .62);
+      while(x.scrollWidth > x.clientWidth + 1 && fs > min){ fs -= 0.5; x.style.fontSize = fs + 'px'; }
+    });
   });
 }
 let fitT = null; let fitRO; const refit = () => { clearTimeout(fitT); fitT = setTimeout(fitGrid, 60); };
