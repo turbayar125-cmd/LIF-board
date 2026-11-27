@@ -67,11 +67,11 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .pb{flex:1;min-height:0;overflow:auto;padding:.6rem}
 
 /* dashboard */
-.dash{display:grid;gap:.6rem;height:100%;grid-template-columns:minmax(17rem,20%) 1fr minmax(26rem,30%);grid-template-rows:auto minmax(0,1fr)}
+.dash{display:grid;gap:.6rem;height:100%;grid-template-columns:minmax(16rem,18%) minmax(0,1fr) minmax(22rem,25%);grid-template-rows:auto minmax(0,1fr)}
 .dash .kpis{grid-column:1/-1}
 .colL,.colR,.colC{display:flex;flex-direction:column;gap:.6rem;min-height:0}
 .cals{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;flex:none}
-.rtop{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;height:38%;flex:none}
+.rtop{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;height:34%;flex:none}
 .grow{flex:1;min-height:0}
 
 .kpis{display:flex;gap:.6rem;align-items:stretch}
@@ -157,6 +157,8 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .big-grid .eg2 col.ckc{width:3rem} .big-grid .eg2 th{font-size:1.1rem} .big-grid .eg2 tr.band td{font-size:1.05rem}
 
 .dash .slotb{font-size:.85rem;padding:0 .3rem} .dash .ckb{font-size:.9rem} .dash .eg2 col.ckc{width:1.9rem}
+.dash .ph{padding:.4rem .5rem;gap:.3rem} .dash .ph h3{font-size:.98rem;gap:.35rem} .dash .ph h3 .n{min-width:1.4rem;height:1.4rem;font-size:.78rem}
+.dash .pb{padding:.5rem}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -520,8 +522,8 @@ function renderLoginBtn(){
 }
 
 /* ================= panels ================= */
-function panel(num, title, body, {right='', more='', cls='', id=''}={}){
-  return `<section class="panel ${cls}" ${id?`id="${id}"`:''}><div class="ph"><h3>${num?`<span class="n">${num}</span>`:''}${esc(title)}</h3><span class="sp"></span>${right}${more?`<button class="more" data-tab="${more}" aria-label="Дэлгэрэнгүй">${S.tab==='dash'?'›':'Дэлгэрэнгүй'}</button>`:''}</div><div class="pb">${body}</div></section>`;
+function panel(num, title, body, {right='', more='', cls='', id='', head=''}={}){
+  return `<section class="panel ${cls}" ${id?`id="${id}"`:''}><div class="ph"><h3 ${head?`data-tab="${head}" style="cursor:pointer"`:''}>${num?`<span class="n">${num}</span>`:''}${esc(title)}</h3><span class="sp"></span>${right}${more?`<button class="more" data-tab="${more}" aria-label="Дэлгэрэнгүй">${S.tab==='dash'?'›':'Дэлгэрэнгүй'}</button>`:''}</div><div class="pb">${body}</div></section>`;
 }
 function calHTML(kind, big){
   const m = curMonth()[kind] || {};
@@ -633,15 +635,15 @@ function viewDash(){
   </div>`;
   return `<div class="dash">${kpis}
     <div class="colL">
-      <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {more:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {more:'qual'})}</div>
+      <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {head:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {head:'qual'})}</div>
       ${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'grow', more:'people'})}
     </div>
     <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridHTML(), {cls:'grow', more:'grid', right:`<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
     <div class="colR">
       <div class="rtop">
-        ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {more:'sched'})}
-        ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:4rem"></div>`, {more:'meet'})}
-        ${panel('5','Эрсдэл', risksHTML(true), {more:'risk'})}
+        ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {head:'sched'})}
+        ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:4rem"></div>`, {head:'meet'})}
+        ${panel('5','Эрсдэл', risksHTML(true), {head:'risk'})}
       </div>
       ${panel('8','Field Map', `<div class="mapfit">${mapHTML(true)}</div>`, {cls:'grow', more:'map'})}
     </div>
@@ -754,18 +756,22 @@ function render(){
 }
 
 function fitGrid(){
+  fitRO.disconnect();
   document.querySelectorAll('.eg2').forEach(tb => {
-    const pb = tb.closest('.pb'); if(!pb) return;
+    const pb = tb.closest('.pb'); if(!pb) return; fitRO.observe(pb);
     tb.style.setProperty('--rh', '2.4rem');
     const cs = getComputedStyle(pb), avail = pb.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     const head = tb.tHead.offsetHeight; let bands = 0; tb.querySelectorAll('tr.band').forEach(r => bands += r.offsetHeight);
     const n = tb.querySelectorAll('tr.slot').length; if(!n) return;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const rh = Math.max(2.4*rem, Math.floor((avail - head - bands - 2) / n));
+    const rh = Math.max(2.4*rem, Math.floor((avail - head - bands - n - 4) / n));
     tb.style.setProperty('--rh', rh + 'px');
   });
 }
-let fitT = null; window.addEventListener('resize', () => { clearTimeout(fitT); fitT = setTimeout(fitGrid, 120); });
+let fitT = null; let fitRO; const refit = () => { clearTimeout(fitT); fitT = setTimeout(fitGrid, 60); };
+window.addEventListener('resize', refit);
+fitRO = new ResizeObserver(refit);
+document.fonts?.ready?.then(refit);
 
 /* ================= Ink ================= */
 class Ink{
