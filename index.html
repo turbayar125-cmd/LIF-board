@@ -495,7 +495,7 @@ function matchPerson(n, list){
 const featDoc = () => peek('featured', () => ({ list:[] }));
 // Од (онцлох ярилцлага хийсэн) — бүх цаг үеийн бүртгэл
 const starLog = () => peek('stars', () => ({ log:[] })).log || [];
-function starInfo(name){ const k = normName(name), today = ymd(new Date()); let n = 0, td = false; for(const e of starLog()) if(normName(e.name) === k){ n++; if(e.date === today) td = true; } return { n, today:td }; }
+function starInfo(name){ const k = normName(name), today = ymd(new Date()), days = new Set(); for(const e of starLog()) if(normName(e.name) === k) days.add(e.date); return { n:days.size, today:days.has(today) }; } // нэг өдөрт нэг од
 function allPeople(){
   const base = basePeople();
   const fl = (featDoc().list||[]).filter(f => !matchPerson(f.name, base)).map(f => ({ id:'f'+f.name, name:f.name, role:f.role||'', dept:f.dept||'', photo:'', feat:true }));
@@ -940,13 +940,18 @@ function pickImage(cb){
 let starTimer = null;
 function addStar(name){
   const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log || [];
-  const e = { id:uid(), name, date:ymd(new Date()), t:Date.now(), by:S.user?.email || '' };
-  sd.log.push(e); commit('stars');
+  const today = ymd(new Date()), k = normName(name);
+  // өмнө нь нэг өдөрт давхар өгсөн бол цэвэрлэнэ
+  const seen = new Set(), before = sd.log.length;
+  sd.log = sd.log.filter(x => { const kk = normName(x.name) + '|' + x.date; if(seen.has(kk)) return false; seen.add(kk); return true; });
+  let e = sd.log.find(x => normName(x.name) === k && x.date === today), already = !!e;
+  if(!e){ e = { id:uid(), name, date:today, t:Date.now(), by:S.user?.email || '' }; sd.log.push(e); }
+  if(!already || sd.log.length !== before) commit('stars');
   const f = (featDoc().list||[]).find(x => normName(x.name) === normName(name));
   const m = personByName(name) || { name };
-  showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || '' }, starInfo(name).n, e.id);
+  showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || '' }, starInfo(name).n, e.id, already);
 }
-function showStarPop(p, n, id){
+function showStarPop(p, n, id, already){
   let el = $('#starpop'); if(!el){ el = document.createElement('div'); el.id = 'starpop'; document.body.appendChild(el); }
   const d = new Date();
   el.innerHTML = `<div class="sp-card">
@@ -955,8 +960,8 @@ function showStarPop(p, n, id){
     <div class="sp-lbl">Онцлох ярилцлага · ${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}</div>
     <div class="sp-name">${esc(p.name)}</div>
     <div class="sp-role">${esc([p.role, p.dept].filter(Boolean).join(' · '))}</div>
-    <div class="sp-n"><b>★ ${n}</b> од</div>
-    <button class="sp-undo" data-unstar="${esc(id)}">Буцаах</button>
+    <div class="sp-n"><b>★ ${n}</b> од</div>${already ? '<div class="sp-role" style="margin-top:.4rem;color:#b45309">Өнөөдөр аль хэдийн од авсан — нэг өдөрт нэг од</div>' : ''}
+    <button class="sp-undo" data-unstar="${esc(id)}">${already ? 'Өнөөдрийн одыг цуцлах' : 'Буцаах'}</button>
     <div class="sp-bar"></div></div>`;
   el.className = 'show';
   clearTimeout(starTimer); starTimer = setTimeout(hideStarPop, 2000);
