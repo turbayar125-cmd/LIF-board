@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LIF Board — Leadership in the Field</title>
+<link rel="icon" href="logo-mark.png">
+<meta name="theme-color" content="#1d1d1b">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --y:#ffc20e; --y2:#ffe07a; --y3:#fff6d6;
+  --ink:#1d1d1b; --ink2:#3a3934; --mut:#6f6b60;
+  --bg:#f3efe4; --card:#fff; --line:#e7dfc9; --line2:#d6ccb0;
+  --ok:#15803d; --okbg:#dcfce7; --bad:#dc2626; --badbg:#fee2e2; --plan:#64748b; --planbg:#eef2f6;
+  --red:#e11d2a;
+  --r:.7rem; --shadow:0 .1rem .5rem rgba(40,30,0,.08);
+}
+*{box-sizing:border-box}
+html{font-size:clamp(11px,.78vw,30px)}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+body{display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;touch-action:manipulation}
+input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:1rem;background:var(--ink);color:#fff;padding:.5rem 1rem;flex:none}
+.brand{display:flex;align-items:center;gap:.7rem;min-width:0}
+.brand img{height:2.4rem}
+.brand b{font-size:1.45rem;letter-spacing:.04em;color:var(--y);white-space:nowrap}
+.brand small{display:block;font-size:.8rem;color:#bdb8a8;letter-spacing:.02em;white-space:nowrap}
+.tabs{display:flex;gap:.25rem;margin-left:1rem;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.tabs button{padding:.55rem .9rem;border-radius:.5rem;font-size:1.02rem;color:#e9e5d8;white-space:nowrap;font-weight:600}
+.tabs button .n{display:inline-grid;place-items:center;width:1.5rem;height:1.5rem;border-radius:50%;background:#3b3a35;color:var(--y);font-size:.85rem;margin-right:.4rem}
+.tabs button.on{background:var(--y);color:var(--ink)}
+.tabs button.on .n{background:var(--ink)}
+.tbtn{display:inline-flex;align-items:center;gap:.45rem;padding:.55rem .9rem;border-radius:.5rem;background:#34332e;color:#fff;font-weight:600;font-size:.98rem;white-space:nowrap}
+.tbtn.on{background:var(--y);color:var(--ink)}
+.tbtn svg{width:1.2rem;height:1.2rem}
+
+/* sub bar */
+.sub{display:flex;align-items:center;gap:.8rem;padding:.55rem 1rem;background:var(--y);flex:none;flex-wrap:wrap}
+.datenav{display:flex;align-items:center;gap:.35rem}
+.datenav button:not(.sbtn){width:2.8rem;height:2.6rem;border-radius:.5rem;background:rgba(0,0,0,.08);font-size:1.4rem;font-weight:700}
+.datenav input{height:2.6rem;border:0;border-radius:.5rem;padding:0 .6rem;font-size:1.05rem;background:#fff}
+.wk{font-weight:800;font-size:1.25rem}
+.wk small{font-weight:600;font-size:.95rem;opacity:.75;margin-left:.5rem}
+.sp{flex:1}
+.sync{display:flex;align-items:center;gap:.45rem;font-size:.95rem;font-weight:600;background:rgba(255,255,255,.55);padding:.4rem .8rem;border-radius:2rem}
+.dot{width:.7rem;height:.7rem;border-radius:50%;background:#9ca3af}
+.dot.ok{background:var(--ok)} .dot.busy{background:#f59e0b} .dot.bad{background:var(--bad)}
+.sbtn{padding:.55rem .9rem;border-radius:.5rem;background:var(--ink);color:#fff;font-weight:700;font-size:.98rem}
+.sbtn.light{background:rgba(255,255,255,.7);color:var(--ink)}
+
+/* main */
+main{flex:1;min-height:0;padding:.7rem;overflow:auto}
+.panel{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;border:1px solid var(--line)}
+.ph{display:flex;align-items:center;gap:.5rem;padding:.5rem .7rem;background:var(--y3);border-bottom:1px solid var(--line);flex:none}
+.ph h3{margin:0;font-size:1.08rem;font-weight:800;display:flex;align-items:center;gap:.45rem;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph h3 .n{display:inline-grid;place-items:center;min-width:1.55rem;height:1.55rem;border-radius:.4rem;background:var(--ink);color:var(--y);font-size:.85rem}
+.ph .sp{flex:1}
+.chip-s{font-size:.85rem;font-weight:700;padding:.2rem .55rem;border-radius:1rem;background:#fff;border:1px solid var(--line2);white-space:nowrap}
+.more{font-size:.85rem;font-weight:700;padding:.3rem .65rem;border-radius:.4rem;background:var(--ink);color:#fff;white-space:nowrap;flex:none}
+.dash .more{padding:.2rem .55rem;font-size:1rem}
+.calfoot{display:flex;justify-content:center;margin-top:.45rem}
+.pb{flex:1;min-height:0;overflow:auto;padding:.6rem}
+
+/* dashboard */
+.dash{display:grid;gap:.6rem;height:100%;grid-template-columns:minmax(17rem,20%) 1fr minmax(26rem,30%);grid-template-rows:auto minmax(0,1fr)}
+.dash .kpis{grid-column:1/-1}
+.colL,.colR,.colC{display:flex;flex-direction:column;gap:.6rem;min-height:0}
+.cals{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;flex:none}
+.rtop{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;height:38%;flex:none}
+.grow{flex:1;min-height:0}
+
+.kpis{display:flex;gap:.6rem;align-items:stretch}
+.kpi{background:var(--card);border-radius:var(--r);border:1px solid var(--line);box-shadow:var(--shadow);padding:.55rem .9rem;min-width:9rem;display:flex;flex-direction:column;justify-content:center}
+.kpi .v{font-size:2rem;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
+.kpi .v .g{color:var(--ok)} .kpi .v .r{color:var(--bad)}
+.kpi .l{font-size:.85rem;color:var(--mut);font-weight:600;margin-top:.15rem}
+.kpi.crit .v{color:var(--bad)}
+.leaders{flex:1;min-width:0;background:var(--card);border-radius:var(--r);border:1px solid var(--line);box-shadow:var(--shadow);padding:.45rem .7rem;display:flex;align-items:center;gap:.6rem;overflow:hidden}
+.leaders .lt{font-weight:800;font-size:.9rem;writing-mode:horizontal-tb;color:var(--mut);white-space:nowrap}
+.leaders .ll{display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none}
+.ldr{display:flex;align-items:center;gap:.45rem;background:var(--y3);border:1px solid var(--line);border-radius:2rem;padding:.2rem .7rem .2rem .2rem;white-space:nowrap}
+.ldr b{font-size:.9rem;display:block;line-height:1.1}
+.ldr small{font-size:.75rem;color:var(--mut);display:block;line-height:1.1}
+
+.av{width:2.3rem;height:2.3rem;border-radius:50%;object-fit:cover;flex:none;background:var(--y);display:inline-grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--ink);border:2px solid #fff}
+.av.lg{width:3.6rem;height:3.6rem;font-size:1.2rem}
+.av.sm{width:1.8rem;height:1.8rem;font-size:.7rem}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:.22rem}
+.cal .h{font-size:.72rem;text-align:center;color:var(--mut);font-weight:700}
+.cal button{min-width:0;padding:0;aspect-ratio:1;border-radius:.35rem;background:#f1ede2;font-weight:700;font-size:.9rem;display:grid;place-items:center;border:2px solid transparent}
+.cal button.g{background:#22a04b;color:#fff}
+.cal button.r{background:var(--bad);color:#fff}
+.cal button.today{border-color:var(--ink)}
+.cal button.fut{opacity:.55}
+.cal.big{gap:.5rem}
+.cal.big button{font-size:1.6rem;border-radius:.6rem;aspect-ratio:1.4}
+.cal.big .h{font-size:1rem}
+.legend{display:flex;gap:1rem;font-size:.9rem;color:var(--mut);margin-top:.6rem;flex-wrap:wrap}
+.legend i{display:inline-block;width:1rem;height:1rem;border-radius:.25rem;vertical-align:-.15rem;margin-right:.3rem}
+
+/* engagement grid */
+.eg{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed}
+.eg th{position:sticky;top:0;background:#fbf8ef;z-index:2;font-size:.9rem;padding:.4rem .3rem;border-bottom:2px solid var(--line2);text-align:left}
+.eg th.today{background:var(--y)}
+.eg th small{display:block;font-weight:600;color:var(--mut);font-size:.75rem}
+.eg th.today small{color:var(--ink)}
+.eg td{border-bottom:1px solid var(--line);border-left:1px solid var(--line);vertical-align:top;padding:.25rem;height:3.2rem}
+.eg td.today{background:#fffbea}
+.eg td.tl{border-left:0;padding:.35rem .5rem;background:#fcfaf4}
+.tl .code{display:inline-block;font-size:.72rem;font-weight:800;color:#fff;border-radius:.3rem;padding:.08rem .35rem;margin-bottom:.15rem}
+.tl .nm{font-size:.86rem;font-weight:700;line-height:1.15}
+.cell{display:flex;flex-wrap:wrap;gap:.2rem;align-items:flex-start;min-height:100%}
+.pc{display:inline-flex;align-items:center;gap:.25rem;max-width:100%;padding:.18rem .45rem .18rem .3rem;border-radius:.4rem;font-size:.86rem;font-weight:700;line-height:1.15;border:1px solid transparent}
+.pc .st{font-weight:900;font-size:.95rem;width:1rem;text-align:center;flex:none}
+.pc .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc.ok{background:var(--okbg);color:#14532d;border-color:#bbf7d0}
+.pc.ok .st{color:var(--ok)}
+.pc.miss{background:var(--badbg);color:#7f1d1d;border-color:#fecaca}
+.pc.miss .st{color:var(--bad)}
+.pc.plan{background:var(--planbg);color:#334155;border-color:#dbe3ea;border-style:dashed}
+.add{display:inline-grid;place-items:center;width:1.8rem;height:1.6rem;border-radius:.4rem;border:1.5px dashed var(--line2);color:var(--mut);font-weight:800;font-size:1.05rem}
+.big-grid .eg td{height:5.4rem;padding:.4rem}
+.big-grid .pc{font-size:1.1rem;padding:.35rem .6rem .35rem .4rem}
+.big-grid .add{width:2.6rem;height:2.4rem;font-size:1.4rem}
+.big-grid .eg th{font-size:1.1rem}
+.big-grid .tl .nm{font-size:1.05rem}
+.view .add{display:none}
+
+/* people */
+.plist{display:flex;flex-direction:column}
+.prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
+.prow .i{flex:1;min-width:0}
+.prow b{display:block;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow small{display:block;font-size:.74rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnt{font-size:.8rem;font-weight:800;background:var(--y3);border:1px solid var(--line2);border-radius:1rem;padding:.1rem .45rem;min-width:1.8rem;text-align:center}
+.cnt.z{opacity:.45}
+.star{font-size:1.35rem;color:#d4cbb0;width:2.2rem;height:2.2rem;display:grid;place-items:center}
+.star.on{color:#f59e0b}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));gap:.6rem}
+.pcard{display:flex;align-items:center;gap:.7rem;background:#fff;border:1px solid var(--line);border-radius:.6rem;padding:.6rem}
+.pcard .i{flex:1;min-width:0}
+.pcard b{display:block;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard small{display:block;color:var(--mut);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .tags{display:flex;gap:.25rem;margin-top:.25rem;flex-wrap:wrap}
+.tag{font-size:.72rem;font-weight:800;color:#fff;border-radius:.3rem;padding:.05rem .35rem}
+
+/* toolbar / forms */
+.bar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.6rem}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1rem;border-radius:.55rem;background:#fff;border:1px solid var(--line2);font-weight:700;font-size:1rem}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.y{background:var(--y);border-color:#e0a800}
+.btn.on{background:var(--ink);color:var(--y);border-color:var(--ink)}
+.btn.danger{color:var(--bad)}
+.inp{height:2.8rem;padding:0 .8rem;border:1px solid var(--line2);border-radius:.55rem;background:#fff;font-size:1rem;min-width:0}
+textarea.inp{height:auto;padding:.6rem .8rem}
+.seg{display:inline-flex;background:#ece6d4;border-radius:.6rem;padding:.2rem;gap:.2rem}
+.seg button{padding:.5rem .9rem;border-radius:.45rem;font-weight:700}
+.seg button.on{background:#fff;box-shadow:var(--shadow)}
+.empty{display:grid;place-items:center;text-align:center;color:var(--mut);height:100%;min-height:6rem;font-size:.95rem;padding:1rem;border:2px dashed var(--line2);border-radius:.6rem;background:#fcfaf4}
+.empty b{display:block;color:var(--ink);font-size:1.05rem;margin-bottom:.25rem}
+.imgbox{width:100%;height:100%;object-fit:contain;display:block;background:#faf8f2;border-radius:.4rem}
+
+/* ink + map */
+.inkwrap{position:relative;width:100%;height:100%;touch-action:none;background:
+  repeating-linear-gradient(#fff 0 2.3rem, #efe9d8 2.3rem calc(2.3rem + 1px));border-radius:.4rem;overflow:hidden}
+.inkwrap canvas{position:absolute;inset:0;width:100%;height:100%}
+.mapbox{position:relative;width:100%;aspect-ratio:16/10;max-height:100%;margin:auto;background:#f6f3ea;border-radius:.5rem;overflow:hidden;touch-action:none;border:1px solid var(--line)}
+.mapbox>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.mapbox canvas{position:absolute;inset:0;width:100%;height:100%}
+.mk{position:absolute;transform:translate(-50%,-50%);font-weight:900;font-size:1rem;color:#fff;padding:.15rem .4rem;border-radius:.35rem;box-shadow:0 .1rem .3rem rgba(0,0,0,.3);pointer-events:auto;white-space:nowrap;border:2px solid #fff}
+.mapmini .mk{font-size:.62rem;padding:.05rem .22rem;border-width:1px}
+.mapfit{height:100%;display:flex;align-items:center;justify-content:center}
+.mapfit .mapbox{height:100%;width:auto;max-width:100%}
+.tools{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.tool{min-width:3rem;height:2.9rem;padding:0 .7rem;border-radius:.5rem;font-weight:900;color:#fff;border:3px solid transparent}
+.tool.sel{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+.pen{width:2.9rem;height:2.9rem;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line2)}
+.pen.sel{box-shadow:0 0 0 3px var(--ink)}
+
+/* risks */
+.risk{display:flex;gap:.6rem;align-items:flex-start;padding:.5rem;border:1px solid var(--line);border-radius:.55rem;margin-bottom:.45rem;background:#fff}
+.risk .lv{font-size:.75rem;font-weight:900;color:#fff;border-radius:.3rem;padding:.15rem .4rem;white-space:nowrap}
+.lv.crit{background:#7f1d1d}.lv.high{background:var(--bad)}.lv.med{background:#f59e0b}.lv.low{background:var(--ok)}
+.risk .i{flex:1;min-width:0}
+.risk b{display:block;font-size:.95rem}
+.risk small{color:var(--mut);font-size:.8rem}
+.risk.closed{opacity:.5}
+.risk.closed b{text-decoration:line-through}
+
+/* modal */
+#modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(20,18,10,.45);padding:2rem}
+#modal.open{display:flex}
+.mbox{background:#fff;border-radius:1rem;box-shadow:0 1rem 3rem rgba(0,0,0,.3);width:min(64rem,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden}
+.mbox.sm{width:min(34rem,100%)}
+.mh{display:flex;align-items:center;gap:.6rem;padding:.9rem 1.1rem;border-bottom:1px solid var(--line);background:var(--y3)}
+.mh h2{margin:0;font-size:1.3rem;flex:1}
+.mh .x{width:2.8rem;height:2.8rem;border-radius:.5rem;font-size:1.6rem;background:#fff;border:1px solid var(--line2)}
+.mb{padding:1rem 1.1rem;overflow:auto;min-height:0}
+.mf{display:flex;gap:.6rem;justify-content:flex-end;padding:.8rem 1.1rem;border-top:1px solid var(--line)}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.45rem}
+.pick button{display:flex;align-items:center;gap:.5rem;padding:.45rem .6rem;border-radius:.55rem;border:1px solid var(--line);background:#fff;text-align:left;min-height:3.4rem}
+.pick button:active{background:var(--y3)}
+.pick button b{display:block;font-size:.98rem;line-height:1.15}
+.pick button small{display:block;font-size:.76rem;color:var(--mut);line-height:1.15}
+.pick button.chosen{background:var(--y);border-color:#e0a800}
+.grp{font-weight:800;font-size:.9rem;color:var(--mut);margin:.8rem 0 .35rem;text-transform:uppercase;letter-spacing:.04em}
+.fld{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.8rem}
+.fld label{font-weight:700;font-size:.92rem}
+.row{display:flex;gap:.6rem;align-items:center}
+.set-sec{background:#fff;border:1px solid var(--line);border-radius:.7rem;padding:1rem;margin-bottom:.8rem}
+.set-sec h3{margin:0 0 .7rem;font-size:1.15rem}
+.typerow{display:grid;grid-template-columns:7rem 1fr 4rem auto;gap:.5rem;align-items:center;margin-bottom:.4rem}
+.typerow input[type=color]{width:4rem;height:2.8rem;border:1px solid var(--line2);border-radius:.5rem;padding:.15rem;background:#fff}
+.note{font-size:.9rem;color:var(--mut);line-height:1.45}
+code{background:#f4f0e3;padding:.1rem .35rem;border-radius:.3rem;font-size:.9em}
+
+#toasts{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:.5rem;z-index:80}
+.toast{background:var(--ink);color:#fff;padding:.7rem 1.1rem;border-radius:.6rem;font-weight:600;font-size:1rem;box-shadow:var(--shadow)}
+.toast.bad{background:var(--bad)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;height:100%}
+.full{height:100%}
+@media (max-width:900px){
+  html{font-size:13px} body{overflow:auto} main{overflow:visible}
+  .dash{display:flex;flex-direction:column;height:auto}
+  .rtop{height:auto;grid-template-columns:1fr} .rtop .panel{height:16rem}
+  .colC .panel{height:40rem} .kpis{flex-wrap:wrap} .two{grid-template-columns:1fr}
+  .brand small{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><img src="logo-mark.png" alt=""><div><b id="brandT">LEADERSHIP IN THE FIELD</b><small>Engagements board · Premium</small></div></div>
+  <nav class="tabs" id="tabs"></nav>
+  <button class="tbtn" id="btnEdit" title="Засах / харах горим"></button>
+  <button class="tbtn" id="btnFull" title="Бүтэн дэлгэц (MAXHUB)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Бүтэн дэлгэц</button>
+</header>
+<div class="sub">
+  <div class="datenav">
+    <button id="prevW" aria-label="Өмнөх долоо хоног">‹</button>
+    <input type="date" id="dateIn">
+    <button id="nextW" aria-label="Дараагийн долоо хоног">›</button>
+    <button class="sbtn light" id="todayB" style="margin-left:.3rem">Өнөөдөр</button>
+  </div>
+  <div class="wk" id="wkLabel"></div>
+  <div class="sp"></div>
+  <div class="sync" id="sync"><span class="dot"></span><span>…</span></div>
+  <button class="sbtn light" id="btnBackup">⬇ Backup</button>
+  <button class="sbtn light" id="btnRestore">⬆ Restore</button>
+  <button class="sbtn" id="btnLogin"></button>
+  <input type="file" id="restoreFile" accept="application/json" class="hidden">
+</div>
+<main id="view"></main>
+<div id="modal"></div>
+<div id="toasts"></div>
+
+<script>
+'use strict';
+/* ================= CONFIG ================= */
+const CONFIG = {
+  SUPABASE_URL: 'https://gtzkbyencvvrfunfwxvn.supabase.co',   // otpclicenses.mn-тэй ижил сан
+  SUPABASE_ANON_KEY: 'sb_publishable_L_OS_lJuW7-4oWGw12uYzA_gB3nQnn5'
+};
+let sb = null;
+try{ if(window.supabase) sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY); }catch(e){ console.warn(e); }
+
+/* ================= helpers ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const DOW = ['Ня','Да','Мя','Лх','Пү','Ба','Бя'];
+const DOWL = ['Ням','Даваа','Мягмар','Лхагва','Пүрэв','Баасан','Бямба'];
+const MON = ['1-р сар','2-р сар','3-р сар','4-р сар','5-р сар','6-р сар','7-р сар','8-р сар','9-р сар','10-р сар','11-р сар','12-р сар'];
+function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day); const y0 = new Date(Date.UTC(t.getUTCFullYear(),0,1)); return [t.getUTCFullYear(), Math.ceil(((t-y0)/864e5+1)/7)]; }
+function initials(n){ const p = String(n||'?').trim().split(/\s+/); return ((p[0]||'')[0]||'' ) + ((p[1]||'')[0]||''); }
+function toast(msg, bad){ const t = document.createElement('div'); t.className = 'toast'+(bad?' bad':''); t.textContent = msg; $('#toasts').appendChild(t); setTimeout(()=>t.remove(), 3200); }
+const ICON = { ok:'✓', miss:'✗', plan:'○' };
+const ST_NEXT = { ok:'miss', miss:'plan', plan:'ok' };
+
+/* ================= defaults ================= */
+const DEFAULT_TYPES = [
+  { code:'SI',   name:'Safety Interaction',           color:'#2563eb' },
+  { code:'CP',   name:'Coach / Peer',                 color:'#7c3aed' },
+  { code:'TP',   name:'Trainee / Peer',               color:'#0891b2' },
+  { code:'CRM',  name:'Critical Risk Management',     color:'#dc2626' },
+  { code:'PTHA', name:'Pre Task Hazard Assessment',   color:'#ea580c' },
+  { code:'SL',   name:'Spotlight',                    color:'#16a34a' },
+  { code:'GH',   name:'Green Hat',                    color:'#65a30d' }
+];
+const defSettings = () => ({ title:'Leadership in the Field Engagements', weekStart:6, types:DEFAULT_TYPES.map(t=>({...t})), leaders:[], extraPeople:[] });
+const defWeek = () => ({ grid:{}, featured:[], meeting:{ people:[], ink:[] }, map:{ markers:[], ink:[] } });
+const defMonth = () => ({ prio:{}, qual:{} });
+
+/* ================= state ================= */
+const S = {
+  date: new Date(), tab: localStorage.getItem('lif:tab') || 'dash',
+  edit: localStorage.getItem('lif:edit') !== '0',
+  user: null, isAdmin: false, cloud: false,
+  docs: {},            // key -> {data, t}
+  people: [],          // [{id,name,role,dept,photo}]
+  sync: 'local', dirty: new Set(), drawing: false, needRender: false,
+  pen: { mode:'pen', color:'#1d1d1b', marker:'SI' }
+};
+
+/* ================= storage ================= */
+function loadLocal(){
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('lifdoc:')){ try{ S.docs[k.slice(7)] = JSON.parse(localStorage.getItem(k)); }catch(e){} }
+  }
+  try{ S.people = JSON.parse(localStorage.getItem('lif:people')||'[]'); }catch(e){}
+}
+function saveLocal(key){
+  try{ localStorage.setItem('lifdoc:'+key, JSON.stringify(S.docs[key])); }
+  catch(e){ toast('Төхөөрөмжийн санах ой дүүрсэн — зураг жижигрүүлнэ үү', true); }
+}
+function getDoc(key, def){
+  if(!S.docs[key]) S.docs[key] = { data: def(), t: 0 };
+  return S.docs[key].data;
+}
+function peek(key, def){ return S.docs[key] ? S.docs[key].data : def(); }
+function commit(key, {noRender} = {}){
+  S.docs[key].t = Date.now();
+  saveLocal(key);
+  S.dirty.add(key);
+  queuePush();
+  if(!noRender) render();
+}
+const settings = () => { const s = getDoc('settings', defSettings); if(!s.types) s.types = DEFAULT_TYPES.map(t=>({...t})); if(!s.leaders) s.leaders=[]; if(!s.extraPeople) s.extraPeople=[]; return s; };
+
+/* ================= week / month keys ================= */
+function weekStartDate(d){ const ws = settings().weekStart ?? 6; const diff = (d.getDay() - ws + 7) % 7; const x = addDays(d, -diff); x.setHours(0,0,0,0); return x; }
+function weekKey(d){ const s = weekStartDate(d); const [y,w] = isoWeek(s); return `${y}-W${pad(w)}`; }
+function weekDays(d){ const s = weekStartDate(d); return [...Array(7)].map((_,i)=>addDays(s,i)); }
+const monthKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+const curWeek = () => getDoc('week:'+weekKey(S.date), defWeek);
+const curMonth = () => getDoc('month:'+monthKey(S.date), defMonth);
+const wkey = () => 'week:'+weekKey(S.date);
+const mkey = () => 'month:'+monthKey(S.date);
+
+/* ================= cloud sync ================= */
+let pushTimer = null;
+function setSync(state, text){
+  S.sync = state;
+  const el = $('#sync');
+  const map = { ok:['ok','Хадгалсан (cloud)'], busy:['busy','Хадгалж байна…'], bad:['bad','Холболт алдаатай — дотор хадгалсан'], local:['','Зөвхөн энэ төхөөрөмжид'] };
+  const [c,t] = map[state] || map.local;
+  el.innerHTML = `<span class="dot ${c}"></span><span>${esc(text||t)}</span>`;
+}
+function queuePush(){
+  if(!S.cloud){ setSync('local'); return; }
+  setSync('busy');
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(pushDirty, 700);
+}
+async function pushDirty(){
+  if(!S.cloud || !S.dirty.size) { if(S.cloud) setSync('ok'); return; }
+  const keys = [...S.dirty]; S.dirty.clear();
+  const rows = keys.map(k => ({ key:k, data:S.docs[k].data, client_t:S.docs[k].t, updated_by:S.user?.email || null, updated_at:new Date().toISOString() }));
+  const { error } = await sb.from('lif_docs').upsert(rows);
+  if(error){ keys.forEach(k=>S.dirty.add(k)); console.warn(error); setSync('bad', error.code==='42501' ? 'Засах эрхгүй (зөвхөн админ)' : 'Cloud-д хадгалж чадсангүй'); setTimeout(queuePush, 15000); return; }
+  setSync('ok');
+}
+async function cloudLoad(){
+  const { data, error } = await sb.from('lif_docs').select('key,data,client_t');
+  if(error){ console.warn(error); S.cloud = false; setSync('bad', error.code==='42P01' ? 'lif_docs хүснэгт алга — SQL ажиллуулна уу' : 'Cloud уншиж чадсангүй'); return false; }
+  const seen = new Set();
+  for(const r of data){
+    seen.add(r.key);
+    const loc = S.docs[r.key];
+    if(!loc || (r.client_t||0) >= (loc.t||0)){ S.docs[r.key] = { data:r.data, t:r.client_t||0 }; saveLocal(r.key); }
+    else S.dirty.add(r.key); // local newer (offline edit) → push
+  }
+  for(const k of Object.keys(S.docs)) if(!seen.has(k) && S.docs[k].t) S.dirty.add(k);
+  return true;
+}
+async function loadPeople(){
+  try{
+    const [d,e] = await Promise.all([
+      sb.from('departments').select('id,name'),
+      sb.from('employees').select('id,full_name,position,photo_url,department_id,active').eq('active', true).order('full_name').range(0,1999)
+    ]);
+    if(e.error) throw e.error;
+    const dm = Object.fromEntries((d.data||[]).map(x=>[x.id,x.name]));
+    S.people = (e.data||[]).map(x => ({ id:'e'+x.id, name:x.full_name, role:x.position||'', dept:dm[x.department_id]||'', photo:x.photo_url||'' }));
+    localStorage.setItem('lif:people', JSON.stringify(S.people));
+  }catch(err){ console.warn('people', err); }
+}
+let channel = null;
+function subscribe(){
+  if(channel) sb.removeChannel(channel);
+  channel = sb.channel('lif_docs_rt').on('postgres_changes', { event:'*', schema:'public', table:'lif_docs' }, p => {
+    const r = p.new; if(!r || !r.key) return;
+    const loc = S.docs[r.key];
+    if(S.dirty.has(r.key)) return;
+    if(loc && (r.client_t||0) <= (loc.t||0)) return;
+    S.docs[r.key] = { data:r.data, t:r.client_t||0 }; saveLocal(r.key);
+    if(S.drawing || $('#modal').classList.contains('open')) S.needRender = true; else render();
+  }).subscribe();
+}
+async function startCloud(){
+  if(!sb) { setSync('local'); return; }
+  const { data } = await sb.auth.getSession();
+  S.user = data?.session?.user || null;
+  renderLoginBtn();
+  if(!S.user){ S.cloud = false; setSync('local','Нэвтрээгүй — зөвхөн энэ төхөөрөмжид'); return; }
+  setSync('busy','Ачаалж байна…');
+  const ok = await cloudLoad();
+  await loadPeople();
+  try{ const r = await sb.rpc('is_admin'); S.isAdmin = !!r.data; }catch(e){}
+  if(ok){ S.cloud = true; subscribe(); if(S.dirty.size) queuePush(); else setSync('ok'); }
+  render();
+}
+// fallback poll (realtime унтарсан тохиолдолд)
+setInterval(async () => {
+  if(!S.cloud || S.dirty.size || S.drawing) return;
+  const keys = ['settings', wkey(), mkey(), 'risks', 'schedule', 'mapbg'];
+  const { data } = await sb.from('lif_docs').select('key,data,client_t').in('key', keys);
+  let ch = false;
+  for(const r of data||[]){ const loc = S.docs[r.key]; if(!loc || (r.client_t||0) > (loc.t||0)){ S.docs[r.key] = {data:r.data, t:r.client_t||0}; saveLocal(r.key); ch = true; } }
+  if(ch && !$('#modal').classList.contains('open')) render();
+}, 60000);
+
+/* ================= people helpers ================= */
+function allPeople(){
+  const ex = settings().extraPeople.map(p => ({...p, extra:true}));
+  return [...S.people, ...ex];
+}
+function personByName(n){ return allPeople().find(p => p.name === n); }
+function avatar(p, cls=''){
+  if(p?.photo) return `<img class="av ${cls}" src="${esc(p.photo)}" alt="" loading="lazy">`;
+  return `<span class="av ${cls}">${esc(initials(p?.name).toUpperCase())}</span>`;
+}
+
+/* ================= stats ================= */
+function weekStats(w){
+  let ok=0, miss=0, plan=0; const names = new Set(); const perName = {};
+  for(const t of Object.values(w.grid||{})) for(const arr of Object.values(t)) for(const e of arr){
+    if(e.st==='ok') ok++; else if(e.st==='miss') miss++; else plan++;
+    if(e.st!=='plan'){ names.add(e.name); }
+    perName[e.name] = perName[e.name] || {ok:0,miss:0,plan:0,codes:new Set()};
+    perName[e.name][e.st]++;
+  }
+  for(const [code,t] of Object.entries(w.grid||{})) for(const arr of Object.values(t)) for(const e of arr) perName[e.name].codes.add(code);
+  return { ok, miss, plan, people:names.size, perName, rate: ok+miss ? Math.round(ok*100/(ok+miss)) : null };
+}
+function calCount(obj){ let g=0,r=0; for(const v of Object.values(obj||{})){ if(v==='g') g++; else if(v==='r') r++; } return {g,r}; }
+
+/* ================= render: chrome ================= */
+const TABS = [
+  ['dash','','Dashboard'], ['prio','1','Чухалчлах'], ['qual','2','Чанар'], ['meet','3','Хурал'],
+  ['grid','4','Мэдээлэл'], ['risk','5','Эрсдэл'], ['people','6','Хүмүүс'], ['sched','7','Хуваарь'], ['map','8','Field Map'], ['set','⚙','Тохиргоо']
+];
+function renderChrome(){
+  $('#tabs').innerHTML = TABS.map(([id,n,l]) => `<button data-tab="${id}" class="${S.tab===id?'on':''}">${n?`<span class="n">${n}</span>`:''}${l}</button>`).join('');
+  $('#btnEdit').className = 'tbtn' + (S.edit ? ' on' : '');
+  $('#btnEdit').innerHTML = S.edit ? '✎ Засах горим' : '👁 Харах горим';
+  $('#brandT').textContent = (settings().title || 'Leadership in the Field').toUpperCase();
+  $('#dateIn').value = ymd(S.date);
+  const ds = weekDays(S.date);
+  $('#wkLabel').innerHTML = `${weekKey(S.date)}<small>${ds[0].getMonth()+1}/${ds[0].getDate()} – ${ds[6].getMonth()+1}/${ds[6].getDate()} · ${DOWL[S.date.getDay()]}, ${S.date.getFullYear()}.${pad(S.date.getMonth()+1)}.${pad(S.date.getDate())}</small>`;
+  document.body.classList.toggle('view', !S.edit);
+}
+function renderLoginBtn(){
+  $('#btnLogin').textContent = S.user ? '⎋ ' + (S.user.email||'').split('@')[0] : '🔑 Нэвтрэх';
+}
+
+/* ================= panels ================= */
+function panel(num, title, body, {right='', more='', cls='', id=''}={}){
+  return `<section class="panel ${cls}" ${id?`id="${id}"`:''}><div class="ph"><h3>${num?`<span class="n">${num}</span>`:''}${esc(title)}</h3><span class="sp"></span>${right}${more?`<button class="more" data-tab="${more}" aria-label="Дэлгэрэнгүй">${S.tab==='dash'?'›':'Дэлгэрэнгүй'}</button>`:''}</div><div class="pb">${body}</div></section>`;
+}
+function calHTML(kind, big){
+  const m = curMonth()[kind] || {};
+  const y = S.date.getFullYear(), mo = S.date.getMonth();
+  const first = new Date(y, mo, 1), days = new Date(y, mo+1, 0).getDate();
+  const startDow = (first.getDay() + 6) % 7; // Даваа эхэлнэ
+  const today = ymd(new Date());
+  let h = ['Да','Мя','Лх','Пү','Ба','Бя','Ня'].map(d=>`<div class="h">${d}</div>`).join('');
+  for(let i=0;i<startDow;i++) h += '<div></div>';
+  for(let d=1; d<=days; d++){
+    const k = ymd(new Date(y,mo,d)); const v = m[d] || '';
+    h += `<button data-cal="${kind}" data-day="${d}" class="${v} ${k===today?'today':''} ${k>today?'fut':''}" aria-label="${d}">${d}</button>`;
+  }
+  return `<div class="cal ${big?'big':''}">${h}</div>`;
+}
+function calBadge(kind){ const c = calCount(curMonth()[kind]); return `<span class="chip-s"><span style="color:var(--ok)">${c.g} G</span> / <span style="color:var(--bad)">${c.r} R</span></span>`; }
+
+function gridHTML(){
+  const st = settings(), w = curWeek(), ds = weekDays(S.date), today = ymd(new Date());
+  let h = `<table class="eg"><colgroup><col style="width:11.5rem">${ds.map(()=>'<col>').join('')}</colgroup><thead><tr><th>Төрөл</th>`;
+  h += ds.map(d => `<th class="${ymd(d)===today?'today':''}">${DOWL[d.getDay()]}<small>${d.getMonth()+1}/${d.getDate()}</small></th>`).join('');
+  h += '</tr></thead><tbody>';
+  for(const t of st.types){
+    h += `<tr><td class="tl"><span class="code" style="background:${esc(t.color)}">${esc(t.code)}</span><div class="nm">${esc(t.name)}</div></td>`;
+    ds.forEach((d,i) => {
+      const arr = (w.grid[t.code]||{})[i] || [];
+      h += `<td class="${ymd(d)===today?'today':''}"><div class="cell">${arr.map(e => `<button class="pc ${e.st}" data-chip="${esc(t.code)}|${i}|${e.id}" title="${esc(e.name)}"><span class="st">${ICON[e.st]}</span><span class="tx">${esc(e.name)}</span></button>`).join('')}<button class="add" data-add="${esc(t.code)}|${i}" aria-label="Нэмэх">+</button></div></td>`;
+    });
+    h += '</tr>';
+  }
+  return h + '</tbody></table>';
+}
+
+function peopleListHTML(limit){
+  const w = curWeek(), stt = weekStats(w), fav = new Set(w.featured||[]);
+  let ps = allPeople();
+  if(!ps.length) return `<div class="empty"><div><b>Ажилтны жагсаалт хоосон</b>Нэвтэрмэгц сургалтын системээс автоматаар татагдана, эсвэл Тохиргоо → нэмэлт хүн.</div></div>`;
+  ps = ps.map(p => ({...p, c:(stt.perName[p.name]?.ok)||0, f:fav.has(p.name)}))
+         .sort((a,b) => (b.f-a.f) || (b.c-a.c) || a.name.localeCompare(b.name));
+  if(limit) ps = ps.slice(0, limit);
+  return `<div class="plist">${ps.map(p => `<div class="prow">${avatar(p,'sm')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role||p.dept)}</small></div><span class="cnt ${p.c?'':'z'}" title="Энэ долоо хоногт хийсэн">${p.c}</span><button class="star ${p.f?'on':''}" data-star="${esc(p.name)}" aria-label="Онцлох">★</button></div>`).join('')}</div>`;
+}
+
+function meetingPeopleHTML(big){
+  const m = curWeek().meeting;
+  return `<div class="cell" style="margin-bottom:.4rem">${(m.people||[]).map(n => `<button class="pc ok" data-mrm="${esc(n)}"><span class="tx">${esc(n)}</span>${S.edit?' <span class="st" style="color:var(--mut)">×</span>':''}</button>`).join('')}<button class="add" data-madd="1">+</button></div>`;
+}
+
+function risksHTML(compact){
+  const rs = (peek('risks', ()=>({list:[]})).list || []);
+  const order = {crit:0, high:1, med:2, low:3};
+  const list = rs.filter(r => compact ? !r.closed : true).sort((a,b) => (a.closed-b.closed) || (order[a.level]-order[b.level]));
+  const LV = {crit:'КРИТИК', high:'ӨНДӨР', med:'ДУНД', low:'БАГА'};
+  if(!list.length) return compact ? `<div class="empty"><div><b>Нээлттэй эрсдэл алга</b>${S.edit?'“5 Эрсдэл” цэснээс нэмнэ':''}</div></div>` : '';
+  return list.slice(0, compact ? 6 : 999).map(r => `<div class="risk ${r.closed?'closed':''}"><span class="lv ${r.level}">${LV[r.level]}</span><div class="i"><b>${esc(r.text)}</b><small>${esc([r.area, r.owner, r.date].filter(Boolean).join(' · '))}</small></div>${!compact && S.edit ? `<button class="btn" data-rclose="${r.id}">${r.closed?'Сэргээх':'Хаах'}</button><button class="btn danger" data-rdel="${r.id}">Устгах</button>`:''}</div>`).join('');
+}
+
+function imgDocHTML(key, emptyTitle, emptyText){
+  const d = peek(key, ()=>({}));
+  if(d.img) return `<img class="imgbox" src="${d.img}" alt="">`;
+  return `<div class="empty"><div><b>${emptyTitle}</b>${emptyText}</div></div>`;
+}
+
+function mapHTML(mini){
+  const bg = peek('mapbg', ()=>({})).img, w = curWeek(), types = settings().types;
+  const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
+  return `<div class="mapbox ${mini?'mapmini':''}" id="${mini?'mapMini':'mapMain'}">${bg?`<img src="${bg}" alt="">`:`<div class="empty" style="position:absolute;inset:0;border:0"><div><b>Талбайн зураг оруулаагүй</b>${mini?'':'Доорх “Талбайн зураг солих” товчоор оруулна'}</div></div>`}<canvas></canvas>${(w.map.markers||[]).map(m => `<span class="mk" data-mk="${m.id}" style="left:${m.x*100}%;top:${m.y*100}%;background:${col(m.c)}">${esc(m.c)}</span>`).join('')}</div>`;
+}
+
+/* ================= views ================= */
+function viewDash(){
+  const w = curWeek(), st = weekStats(w), m = curMonth(), p = calCount(m.prio), q = calCount(m.qual);
+  const crit = (peek('risks', ()=>({list:[]})).list||[]).filter(r => !r.closed && r.level==='crit').length;
+  const ldrs = settings().leaders;
+  const kpis = `<div class="kpis">
+    <div class="kpi"><div class="v"><span class="g">${p.g}</span>/<span class="r">${p.r}</span></div><div class="l">1 Чухалчлах · G/R (сар)</div></div>
+    <div class="kpi"><div class="v"><span class="g">${q.g}</span>/<span class="r">${q.r}</span></div><div class="l">2 Чанар · G/R (сар)</div></div>
+    <div class="kpi"><div class="v"><span class="g">${st.ok}</span>${st.miss?`<span style="font-size:.55em;color:var(--bad)"> ✗${st.miss}</span>`:''}${st.plan?`<span style="font-size:.55em;color:var(--plan)"> ○${st.plan}</span>`:''}</div><div class="l">Хийсэн engagement (7 хоног)</div></div>
+    <div class="kpi"><div class="v">${st.rate===null?'—':st.rate+'%'}</div><div class="l">Гүйцэтгэл</div></div>
+    <div class="kpi"><div class="v">${st.people}</div><div class="l">Оролцсон хүн</div></div>
+    <div class="kpi ${crit?'crit':''}"><div class="v">${crit}</div><div class="l">Критик эрсдэл</div></div>
+    <div class="leaders"><span class="lt">Чиглүүлэгч</span><div class="ll">${ldrs.length ? ldrs.map(n => { const pp = personByName(n) || {name:n}; return `<div class="ldr">${avatar(pp,'sm')}<div><b>${esc(n)}</b><small>${esc(pp.role||'')}</small></div></div>`; }).join('') : `<span class="note">${S.edit?'Тохиргоо → Чиглүүлэгч нэмнэ':'—'}</span>`}</div></div>
+  </div>`;
+  return `<div class="dash">${kpis}
+    <div class="colL">
+      <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {more:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {more:'qual'})}</div>
+      ${panel('★','Онцлох ярилцлага', peopleListHTML(), {cls:'grow', more:'people'})}
+    </div>
+    <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridHTML(), {cls:'grow', more:'grid', right:`<span class="chip-s">✓ ${st.ok} · ✗ ${st.miss} · ○ ${st.plan}</span>`})}</div>
+    <div class="colR">
+      <div class="rtop">
+        ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {more:'sched'})}
+        ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:4rem"></div>`, {more:'meet'})}
+        ${panel('5','Эрсдэл', risksHTML(true), {more:'risk'})}
+      </div>
+      ${panel('8','Field Map', `<div class="mapfit">${mapHTML(true)}</div>`, {cls:'grow', more:'map'})}
+    </div>
+  </div>`;
+}
+function viewCal(kind, num, title){
+  const c = calCount(curMonth()[kind]);
+  return `<div class="two">${panel(num, `${title} — ${S.date.getFullYear()} ${MON[S.date.getMonth()]}`, calHTML(kind, true) + `<div class="legend"><span><i style="background:#22a04b"></i>Green — стандарт хангасан</span><span><i style="background:var(--bad)"></i>Red — зөрчил / хангаагүй</span><span><i style="background:#f1ede2"></i>Тэмдэглээгүй</span><span>${S.edit?'Өдөр дээр дарахад: хоосон → G → R → хоосон':''}</span></div>`, {cls:'full'})}
+    ${panel('', 'Сарын дүн', `<div class="kpis" style="flex-wrap:wrap"><div class="kpi"><div class="v g" style="color:var(--ok)">${c.g}</div><div class="l">Green өдөр</div></div><div class="kpi"><div class="v" style="color:var(--bad)">${c.r}</div><div class="l">Red өдөр</div></div><div class="kpi"><div class="v">${c.g+c.r ? Math.round(c.g*100/(c.g+c.r))+'%' : '—'}</div><div class="l">Green хувь</div></div></div>
+      <div class="fld" style="margin-top:1rem"><label>Тайлбар / тэмдэглэл (энэ сар)</label><textarea class="inp" rows="8" data-note="${kind}" ${S.edit?'':'readonly'}>${esc((curMonth().notes||{})[kind]||'')}</textarea></div>`, {cls:'full'})}</div>`;
+}
+function viewGrid(){
+  const st = weekStats(curWeek());
+  return `<div class="big-grid full">${panel('4', 'Мэдээлэл — Leadership in the Field engagements', gridHTML(), {cls:'full', right:`<span class="chip-s">✓ ${st.ok} хийсэн · ✗ ${st.miss} хийгээгүй · ○ ${st.plan} төлөвлөсөн</span><span class="note" style="margin-left:.6rem">${S.edit?'Нэр дээр дарж төлөв солих · + дарж нэмэх':''}</span>`})}</div>`;
+}
+function viewMeet(){
+  return `<div class="two" style="grid-template-columns:1fr 2fr">${panel('3','Хурал хийх хүмүүс', meetingPeopleHTML(true) + `<p class="note">Энэ долоо хоногт хурал / ярилцлага хийх хүмүүс. “+” дарж жагсаалтаас нэмнэ.</p>`, {cls:'full'})}
+    ${panel('', 'Гараар бичих хэсэг', inkTools() + `<div class="inkwrap" id="inkMeet" style="height:calc(100% - 3.6rem)"></div>`, {cls:'full'})}</div>`;
+}
+function inkTools(markers){
+  const pens = ['#1d1d1b','#dc2626','#16a34a','#2563eb','#ea580c'];
+  const types = settings().types;
+  if(!S.edit) return `<div class="note" style="margin-bottom:.5rem">Засахын тулд дээд талын “Харах горим”-ыг “Засах горим” болгоно.</div>`;
+  return `<div class="tools" style="margin-bottom:.6rem">
+    ${markers ? types.map(t => `<button class="tool ${S.pen.mode==='marker'&&S.pen.marker===t.code?'sel':''}" style="background:${esc(t.color)}" data-marker="${esc(t.code)}">${esc(t.code)}</button>`).join('') + '<span style="width:.6rem"></span>' : ''}
+    ${pens.map(c => `<button class="pen ${S.pen.mode==='pen'&&S.pen.color===c?'sel':''}" style="background:${c}" data-pen="${c}" aria-label="Үзэг"></button>`).join('')}
+    <button class="btn ${S.pen.mode==='erase'?'on':''}" data-erase="1">⌫ Арилгагч</button>
+    <button class="btn" data-undo="${markers?'map':'meet'}">↶ Буцаах</button>
+    <button class="btn danger" data-clear="${markers?'map':'meet'}">Бүгдийг арилгах</button>
+  </div>`;
+}
+function viewRisk(){
+  return `<div class="two" style="grid-template-columns:2fr 1fr">${panel('5','Эрсдэлийн бүртгэл', (S.edit ? `<form class="bar" id="riskForm">
+      <input class="inp" name="text" placeholder="Эрсдэлийн тодорхойлолт" required style="flex:2;min-width:16rem">
+      <select class="inp" name="level"><option value="crit">Критик</option><option value="high">Өндөр</option><option value="med" selected>Дунд</option><option value="low">Бага</option></select>
+      <input class="inp" name="area" placeholder="Байршил / алба" style="flex:1;min-width:9rem">
+      <input class="inp" name="owner" placeholder="Хариуцагч" style="flex:1;min-width:9rem">
+      <button class="btn pri">+ Нэмэх</button></form>` : '') + (risksHTML(false) || '<div class="empty"><div><b>Эрсдэл бүртгээгүй</b></div></div>'), {cls:'full'})}
+    ${panel('', 'Зураг / QR', imgDocHTML('riskimg', 'Зураг оруулаагүй', 'QR код, зурагт хуудас г.м.') + (S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn" data-upimg="riskimg">Зураг оруулах</button><button class="btn danger" data-rmimg="riskimg">Устгах</button></div>`:''), {cls:'full'})}</div>`;
+}
+function viewPeople(){
+  const st = weekStats(curWeek()), fav = new Set(curWeek().featured||[]), types = settings().types;
+  const q = (S.pq||'').toLowerCase(), dept = S.pdept||'';
+  const depts = [...new Set(allPeople().map(p=>p.dept).filter(Boolean))].sort();
+  let ps = allPeople().filter(p => (!dept || p.dept===dept) && (!q || (p.name+' '+p.role).toLowerCase().includes(q)));
+  ps.sort((a,b) => ((st.perName[b.name]?.ok||0) - (st.perName[a.name]?.ok||0)) || a.name.localeCompare(b.name));
+  const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
+  return panel('6', `Хүмүүс (${ps.length})`, `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ = онцлох ярилцлага</span></div>
+    ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}">${s?.ok||0}</span><button class="star ${fav.has(p.name)?'on':''}" data-star="${esc(p.name)}">★</button></div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
+}
+function viewSched(){
+  return panel('7', 'Main Schedule / Хуваарь', `<div style="height:calc(100% - 3.6rem)">${imgDocHTML('schedule','Хуваарийн зураг оруулаагүй','Хуваарийн зураг, PDF-ийн screenshot г.м.')}</div>${S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn y" data-upimg="schedule">Зураг оруулах / солих</button><button class="btn danger" data-rmimg="schedule">Устгах</button></div>`:''}`, {cls:'full'});
+}
+function viewMap(){
+  const w = curWeek(), types = settings().types;
+  const counts = types.map(t => [t, (w.map.markers||[]).filter(m=>m.c===t.code).length]);
+  return `<div class="two" style="grid-template-columns:1fr 17rem">${panel('8','Field Map — энэ долоо хоног', inkTools(true) + `<div class="mapfit" style="height:calc(100% - 3.8rem)">${mapHTML(false)}</div>`, {cls:'full'})}
+    ${panel('', 'Тэмдэглэгээ', counts.map(([t,n]) => `<div class="prow"><span class="code tag" style="background:${esc(t.color)};font-size:.9rem">${esc(t.code)}</span><div class="i"><b>${esc(t.name)}</b></div><span class="cnt ${n?'':'z'}">${n}</span></div>`).join('') + `<p class="note">${S.edit?'Дээрх өнгөт товч сонгоод зураг дээр дарахад тэмдэг тавигдана. Арилгагчаар тэмдэг/зураас дээр дарж устгана.':''}</p>${S.edit?`<button class="btn" data-upimg="mapbg" style="width:100%;justify-content:center">Талбайн зураг солих</button>`:''}`, {cls:'full'})}</div>`;
+}
+function viewSet(){
+  const s = settings();
+  return `<div style="max-width:70rem;margin:0 auto">
+    <div class="set-sec"><h3>Ерөнхий</h3>
+      <div class="row"><div class="fld" style="flex:1"><label>Гарчиг</label><input class="inp" id="setTitle" value="${esc(s.title)}"></div>
+      <div class="fld"><label>Долоо хоног эхлэх өдөр</label><select class="inp" id="setWs">${[6,0,1].map(d=>`<option value="${d}" ${s.weekStart==d?'selected':''}>${DOWL[d]}</option>`).join('')}</select></div></div>
+    </div>
+    <div class="set-sec"><h3>Чиглүүлэгч (Leaders)</h3>
+      <div class="cell" style="gap:.4rem">${s.leaders.map(n=>`<button class="pc ok" data-lrm="${esc(n)}"><span class="tx">${esc(n)}</span> <span class="st" style="color:var(--mut)">×</span></button>`).join('')}<button class="btn" data-ladd="1">+ Нэмэх</button></div>
+    </div>
+    <div class="set-sec"><h3>Engagement төрлүүд</h3>
+      ${s.types.map((t,i)=>`<div class="typerow"><input class="inp" data-tcode="${i}" value="${esc(t.code)}" maxlength="6"><input class="inp" data-tname="${i}" value="${esc(t.name)}"><input type="color" data-tcolor="${i}" value="${esc(t.color)}"><button class="btn danger" data-tdel="${i}">Устгах</button></div>`).join('')}
+      <button class="btn" id="tAdd">+ Төрөл нэмэх</button>
+      <p class="note">Код нь Field Map дээрх тэмдэг болно. Кодыг солиход өмнө бичсэн мэдээлэл тухайн код дээрээ үлдэнэ.</p>
+    </div>
+    <div class="set-sec"><h3>Нэмэлт хүмүүс</h3>
+      <p class="note">Сургалтын системд байхгүй хүн (гэрээт гүйцэтгэгч, зочин г.м.).</p>
+      <form class="bar" id="exForm"><input class="inp" name="name" placeholder="Нэр" required><input class="inp" name="role" placeholder="Албан тушаал"><input class="inp" name="dept" placeholder="Алба / компани"><button class="btn pri">+ Нэмэх</button></form>
+      <div class="cell" style="gap:.4rem">${s.extraPeople.map((p,i)=>`<button class="pc plan" data-exrm="${i}"><span class="tx">${esc(p.name)}${p.role?' · '+esc(p.role):''}</span> <span class="st">×</span></button>`).join('')}</div>
+    </div>
+    <div class="set-sec"><h3>Холболт</h3>
+      <p class="note">${S.user ? `Нэвтэрсэн: <b>${esc(S.user.email)}</b> ${S.isAdmin?'(админ)':''} · Ажилтан: <b>${S.people.length}</b> (сургалтын системээс)` : 'Нэвтрээгүй. Нэвтэрвэл бүх төхөөрөмж (MAXHUB, утас, компьютер) нэг мэдээлэлтэй болж, ажилтны жагсаалт сургалтын системээс татагдана.'}</p>
+      <div class="bar">${S.user?'<button class="btn" id="reloadCloud">↻ Дахин татах</button><button class="btn" id="logoutB">Гарах</button>':'<button class="btn pri" id="loginB2">Нэвтрэх</button>'}</div>
+    </div>
+  </div>`;
+}
+
+/* ================= render ================= */
+let inks = [];
+function render(){
+  S.needRender = false;
+  renderChrome();
+  inks.forEach(i => i.destroy()); inks = [];
+  const v = $('#view');
+  const map = { dash:viewDash, prio:()=>viewCal('prio','1','Чухалчлах'), qual:()=>viewCal('qual','2','Чанар'), meet:viewMeet, grid:viewGrid, risk:viewRisk, people:viewPeople, sched:viewSched, map:viewMap, set:viewSet };
+  v.innerHTML = (map[S.tab] || viewDash)();
+  // ink mounts
+  const w = curWeek();
+  const mm = $('#inkMeetMini'); if(mm) inks.push(new Ink(mm, () => curWeek().meeting.ink, false));
+  const im = $('#inkMeet'); if(im) inks.push(new Ink(im, () => curWeek().meeting.ink, true, 'meet'));
+  const mapMini = $('#mapMini'); if(mapMini) inks.push(new Ink(mapMini, () => curWeek().map.ink, false));
+  const mapMain = $('#mapMain'); if(mapMain) inks.push(new Ink(mapMain, () => curWeek().map.ink, true, 'map'));
+}
+
+/* ================= Ink ================= */
+class Ink{
+  constructor(el, getStrokes, editable, kind){
+    this.el = el; this.get = getStrokes; this.editable = editable; this.kind = kind;
+    this.cv = el.querySelector('canvas') || el.appendChild(document.createElement('canvas'));
+    this.ctx = this.cv.getContext('2d'); this.cur = null;
+    this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(el);
+    if(editable){
+      this.down = e => this.onDown(e); this.move = e => this.onMove(e); this.up = e => this.onUp(e);
+      el.addEventListener('pointerdown', this.down); el.addEventListener('pointermove', this.move);
+      el.addEventListener('pointerup', this.up); el.addEventListener('pointercancel', this.up); el.addEventListener('pointerleave', this.up);
+    }
+  }
+  destroy(){ this.ro.disconnect(); if(this.editable){ ['pointerdown','pointermove','pointerup','pointercancel','pointerleave'].forEach((t,i)=>this.el.removeEventListener(t,[this.down,this.move,this.up,this.up,this.up][i])); } }
+  resize(){ const r = this.el.getBoundingClientRect(), dpr = window.devicePixelRatio||1; this.w = r.width; this.h = r.height; this.cv.width = Math.max(1,r.width*dpr); this.cv.height = Math.max(1,r.height*dpr); this.ctx.setTransform(dpr,0,0,dpr,0,0); this.draw(); }
+  pt(e){ const r = this.el.getBoundingClientRect(); return [ +( (e.clientX-r.left)/r.width ).toFixed(4), +( (e.clientY-r.top)/r.height ).toFixed(4) ]; }
+  stroke(s){
+    const c = this.ctx, p = s.p; if(!p.length) return;
+    c.strokeStyle = s.c; c.fillStyle = s.c; c.lineWidth = Math.max(1, s.w * this.w); c.lineCap = 'round'; c.lineJoin = 'round';
+    c.beginPath(); c.moveTo(p[0][0]*this.w, p[0][1]*this.h);
+    if(p.length === 1){ c.arc(p[0][0]*this.w, p[0][1]*this.h, c.lineWidth/2, 0, 7); c.fill(); return; }
+    for(let i=1;i<p.length-1;i++){ const mx = (p[i][0]+p[i+1][0])/2*this.w, my = (p[i][1]+p[i+1][1])/2*this.h; c.quadraticCurveTo(p[i][0]*this.w, p[i][1]*this.h, mx, my); }
+    const l = p[p.length-1]; c.lineTo(l[0]*this.w, l[1]*this.h); c.stroke();
+  }
+  draw(){ this.ctx.clearRect(0,0,this.w,this.h); (this.get()||[]).forEach(s => this.stroke(s)); if(this.cur) this.stroke(this.cur); }
+  onDown(e){
+    if(!S.edit) return;
+    if(e.target.closest('.mk')) return;
+    const p = this.pt(e);
+    if(this.kind === 'map' && S.pen.mode === 'marker'){
+      const w = curWeek(); w.map.markers.push({ id:uid(), x:p[0], y:p[1], c:S.pen.marker }); commit(wkey()); return;
+    }
+    if(S.pen.mode === 'erase'){ this.eraseAt(p); return; }
+    this.el.setPointerCapture?.(e.pointerId);
+    const width = (e.pointerType === 'pen' ? 3 : 4) / Math.max(400, this.w) * (this.kind==='map' ? 1 : 1.2);
+    this.cur = { c:S.pen.color, w:+width.toFixed(5), p:[p] }; S.drawing = true; this.draw();
+  }
+  onMove(e){
+    if(!this.cur) { if(S.pen.mode==='erase' && e.buttons) this.eraseAt(this.pt(e)); return; }
+    const p = this.pt(e), l = this.cur.p[this.cur.p.length-1];
+    if(Math.abs(p[0]-l[0]) + Math.abs(p[1]-l[1]) < 0.002) return;
+    this.cur.p.push(p); this.draw();
+  }
+  onUp(){
+    if(!this.cur) return;
+    const arr = this.get(); arr.push(this.cur); this.cur = null; S.drawing = false;
+    commit(wkey(), {noRender:true}); this.draw();
+    if(S.needRender) render();
+  }
+  eraseAt(p){
+    const arr = this.get(), tol = 0.02;
+    const i = arr.findIndex(s => s.p.some(q => Math.abs(q[0]-p[0]) < tol && Math.abs(q[1]-p[1]) < tol*(this.w/this.h)));
+    if(i >= 0){ arr.splice(i,1); commit(wkey(), {noRender:true}); this.draw(); }
+  }
+}
+
+/* ================= modal / picker ================= */
+function openModal(html, cls=''){ const m = $('#modal'); m.innerHTML = `<div class="mbox ${cls}">${html}</div>`; m.classList.add('open'); }
+function closeModal(){ const m = $('#modal'); m.classList.remove('open'); m.innerHTML = ''; if(S.needRender) render(); }
+$('#modal').addEventListener('pointerdown', e => { if(e.target.id === 'modal') closeModal(); });
+
+function pickPerson({title, onPick, withStatus, multi}){
+  let status = 'ok', q = '';
+  const recent = JSON.parse(localStorage.getItem('lif:recent')||'[]');
+  const draw = () => {
+    const ps = allPeople(), ql = q.toLowerCase();
+    const filt = ps.filter(p => !ql || (p.name+' '+p.role+' '+p.dept).toLowerCase().includes(ql));
+    const ldr = settings().leaders;
+    const btn = p => `<button data-pp="${esc(p.name)}">${avatar(p)}<span><b>${esc(p.name)}</b><small>${esc(p.role||'')}${p.dept?' · '+esc(p.dept):''}</small></span></button>`;
+    let body = '';
+    if(!ql){
+      const lp = ldr.map(n => personByName(n) || {name:n});
+      if(lp.length) body += `<div class="grp">Чиглүүлэгч</div><div class="pick">${lp.map(btn).join('')}</div>`;
+      const rp = recent.filter(n => !ldr.includes(n)).slice(0,12).map(n => personByName(n) || {name:n});
+      if(rp.length) body += `<div class="grp">Сүүлд сонгосон</div><div class="pick">${rp.map(btn).join('')}</div>`;
+    }
+    const byDept = {};
+    filt.forEach(p => (byDept[p.dept||'Бусад'] = byDept[p.dept||'Бусад'] || []).push(p));
+    for(const d of Object.keys(byDept).sort()) body += `<div class="grp">${esc(d)} (${byDept[d].length})</div><div class="pick">${byDept[d].map(btn).join('')}</div>`;
+    if(ql) body = `<div class="pick"><button data-pp="${esc(q.trim())}" style="border-style:dashed"><span class="av">+</span><span><b>“${esc(q.trim())}”</b><small>Жагсаалтад байхгүй нэрээр нэмэх</small></span></button></div>` + body;
+    if(!ps.length && !ql) body += `<p class="note">Ажилтны жагсаалт хоосон байна. Нэрийг дээрх талбарт бичээд нэмж болно, эсвэл нэвтэрч сургалтын системээс татна.</p>`;
+    $('#pkBody').innerHTML = body;
+  };
+  openModal(`<div class="mh"><h2>${esc(title)}</h2><button class="x" data-close="1">×</button></div>
+    <div class="mb" style="padding-bottom:0"><div class="bar">
+      <input class="inp" id="pkQ" placeholder="Нэр, албан тушаал, алба хайх…" style="flex:1;min-width:14rem;font-size:1.15rem;height:3.2rem" autocomplete="off">
+      ${withStatus?`<div class="seg" id="pkSt"><button data-st="ok" class="on">✓ Хийсэн</button><button data-st="plan">○ Төлөвлөсөн</button><button data-st="miss">✗ Хийгээгүй</button></div>`:''}
+    </div></div>
+    <div class="mb" id="pkBody" style="flex:1"></div>`);
+  draw();
+  $('#pkQ').addEventListener('input', e => { q = e.target.value; draw(); });
+  $('#pkQ').addEventListener('keydown', e => { if(e.key==='Enter' && q.trim()){ choose(q.trim()); } });
+  if(withStatus) $('#pkSt').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if(!b) return; status = b.dataset.st; [...$('#pkSt').children].forEach(x=>x.classList.toggle('on', x===b)); });
+  const choose = name => {
+    const r = [name, ...recent.filter(n=>n!==name)].slice(0,30); localStorage.setItem('lif:recent', JSON.stringify(r));
+    onPick(name, status);
+    if(multi){ toast('Нэмлээ: '+name); q=''; $('#pkQ').value=''; draw(); } else closeModal();
+  };
+  $('#pkBody').addEventListener('click', e => { const b = e.target.closest('[data-pp]'); if(b) choose(b.dataset.pp); });
+}
+
+function chipMenu(code, day, id){
+  const w = curWeek(), arr = w.grid[code][day], e = arr.find(x=>x.id===id); if(!e) return;
+  const t = settings().types.find(x=>x.code===code);
+  openModal(`<div class="mh"><h2>${esc(e.name)}</h2><button class="x" data-close="1">×</button></div>
+    <div class="mb"><p class="note">${esc(t?.name||code)} · ${DOWL[weekDays(S.date)[day].getDay()]}</p>
+    <div class="seg" id="cmSt" style="font-size:1.15rem">${['ok','plan','miss'].map(s=>`<button data-st="${s}" class="${e.st===s?'on':''}">${{ok:'✓ Хийсэн',plan:'○ Төлөвлөсөн',miss:'✗ Хийгээгүй'}[s]}</button>`).join('')}</div>
+    <div class="fld" style="margin-top:1rem"><label>Тэмдэглэл</label><input class="inp" id="cmNote" value="${esc(e.note||'')}" placeholder="Сонголттой"></div></div>
+    <div class="mf"><button class="btn danger" id="cmDel">Устгах</button><span class="sp" style="flex:1"></span><button class="btn pri" id="cmOk">Хадгалах</button></div>`, 'sm');
+  $('#cmSt').addEventListener('click', ev => { const b = ev.target.closest('[data-st]'); if(!b) return; e.st = b.dataset.st; [...$('#cmSt').children].forEach(x=>x.classList.toggle('on', x===b)); });
+  $('#cmDel').onclick = () => { arr.splice(arr.indexOf(e),1); closeModal(); commit(wkey()); };
+  $('#cmOk').onclick = () => { e.note = $('#cmNote').value.trim(); closeModal(); commit(wkey()); };
+}
+
+/* ================= image upload ================= */
+function pickImage(cb){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = () => { const f = inp.files[0]; if(!f) return; const rd = new FileReader(); rd.onload = () => { const img = new Image(); img.onload = () => {
+    const max = 1800, sc = Math.min(1, max/Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+    cb(c.toDataURL('image/jpeg', .82));
+  }; img.src = rd.result; }; rd.readAsDataURL(f); };
+  inp.click();
+}
+
+/* ================= login ================= */
+function loginModal(){
+  if(!sb){ toast('Supabase сан ачаалж чадсангүй (интернэт шалгана уу)', true); return; }
+  openModal(`<div class="mh"><h2>Нэвтрэх</h2><button class="x" data-close="1">×</button></div>
+    <form class="mb" id="lgForm"><p class="note">otpclicenses.mn-д нэвтэрдэг имэйл, нууц үгээрээ нэвтэрнэ.</p>
+    <div class="fld"><label>Имэйл</label><input class="inp" name="email" type="email" required autocomplete="username"></div>
+    <div class="fld"><label>Нууц үг</label><input class="inp" name="password" type="password" required autocomplete="current-password"></div>
+    <button class="btn pri" style="width:100%;justify-content:center">Нэвтрэх</button></form>`, 'sm');
+  $('#lgForm').addEventListener('submit', async ev => {
+    ev.preventDefault(); const f = ev.target;
+    const { error } = await sb.auth.signInWithPassword({ email:f.email.value.trim(), password:f.password.value });
+    if(error){ toast('Нэвтэрч чадсангүй: ' + error.message, true); return; }
+    closeModal(); toast('Нэвтэрлээ'); await startCloud();
+  });
+}
+
+/* ================= events ================= */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button,[data-tab]'); if(!t) return;
+  const d = t.dataset;
+  if(d.close){ closeModal(); return; }
+  if(d.tab){ S.tab = d.tab; localStorage.setItem('lif:tab', S.tab); render(); $('#view').scrollTop = 0; return; }
+  if(!S.edit && (d.cal||d.add||d.chip||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
+  if(d.cal){ const m = curMonth(), o = m[d.cal] = m[d.cal]||{}; o[d.day] = ({'':'g', g:'r', r:''})[o[d.day]||'']; if(!o[d.day]) delete o[d.day]; commit(mkey()); return; }
+  if(d.add){ const [code, day] = d.add.split('|'); const t2 = settings().types.find(x=>x.code===code);
+    pickPerson({ title:`${t2?.name||code} — ${DOWL[weekDays(S.date)[+day].getDay()]}`, withStatus:true, multi:true, onPick:(name, st) => {
+      const w = curWeek(); w.grid[code] = w.grid[code]||{}; const arr = w.grid[code][day] = w.grid[code][day]||[];
+      if(arr.some(x=>x.name===name)) return; arr.push({ id:uid(), name, st }); commit(wkey(), {noRender:true}); S.needRender = true; } });
+    return; }
+  if(d.chip){ const [code, day, id] = d.chip.split('|');
+    // богино дарах = төлөв солих; удаан дарах = цэс (доор)
+    if(longPressed){ longPressed = false; return; }
+    const e2 = curWeek().grid[code][day].find(x=>x.id===id); if(e2){ e2.st = ST_NEXT[e2.st]; commit(wkey()); } return; }
+  if(d.star){ const w = curWeek(); w.featured = w.featured||[]; const i = w.featured.indexOf(d.star); i>=0 ? w.featured.splice(i,1) : w.featured.push(d.star); commit(wkey()); return; }
+  if(d.madd){ pickPerson({ title:'Хурал хийх хүн нэмэх', multi:true, onPick:n => { const m = curWeek().meeting; if(!m.people.includes(n)) m.people.push(n); commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
+  if(d.mrm){ const m = curWeek().meeting; m.people = m.people.filter(x=>x!==d.mrm); commit(wkey()); return; }
+  if(d.pen){ S.pen.mode = 'pen'; S.pen.color = d.pen; render(); return; }
+  if(d.marker){ S.pen.mode = 'marker'; S.pen.marker = d.marker; render(); return; }
+  if(d.erase){ S.pen.mode = 'erase'; render(); return; }
+  if(d.undo){ const w = curWeek(), o = d.undo==='map' ? w.map : w.meeting;
+    if(d.undo==='map'){ // сүүлд нэмсэн зураас эсвэл тэмдэг
+      const lastInk = o.ink.length, lastMk = o.markers.length;
+      if(S.pen.mode==='marker' && lastMk) o.markers.pop(); else if(lastInk) o.ink.pop(); else if(lastMk) o.markers.pop();
+    } else o.ink.pop();
+    commit(wkey()); return; }
+  if(d.clear){ if(!confirm('Энэ долоо хоногийн бүх зураас'+(d.clear==='map'?', тэмдэг':'')+'-ийг арилгах уу?')) return; const w = curWeek(); if(d.clear==='map'){ w.map.ink=[]; w.map.markers=[]; } else w.meeting.ink=[]; commit(wkey()); return; }
+  if(d.mk !== undefined){}
+  if(d.upimg){ pickImage(url => { getDoc(d.upimg, ()=>({})).img = url; commit(d.upimg); toast('Зураг хадгаллаа'); }); return; }
+  if(d.rmimg){ if(!confirm('Зургийг устгах уу?')) return; getDoc(d.rmimg, ()=>({})).img = null; commit(d.rmimg); return; }
+  if(d.rclose){ const r = getDoc('risks', ()=>({list:[]})).list.find(x=>x.id===d.rclose); r.closed = !r.closed; commit('risks'); return; }
+  if(d.rdel){ if(!confirm('Эрсдэлийг устгах уу?')) return; const rs = getDoc('risks', ()=>({list:[]})); rs.list = rs.list.filter(x=>x.id!==d.rdel); commit('risks'); return; }
+  if(d.ladd){ pickPerson({ title:'Чиглүүлэгч нэмэх', multi:true, onPick:n => { const s = settings(); if(!s.leaders.includes(n)) s.leaders.push(n); commit('settings', {noRender:true}); S.needRender = true; } }); return; }
+  if(d.lrm){ const s = settings(); s.leaders = s.leaders.filter(x=>x!==d.lrm); commit('settings'); return; }
+  if(d.tdel !== undefined){ if(!confirm('Энэ төрлийг устгах уу? (Бичсэн мэдээлэл хадгалагдсан хэвээр үлдэнэ)')) return; settings().types.splice(+d.tdel,1); commit('settings'); return; }
+  if(d.exrm !== undefined){ settings().extraPeople.splice(+d.exrm,1); commit('settings'); return; }
+  if(t.id === 'tAdd'){ settings().types.push({ code:'NEW', name:'Шинэ төрөл', color:'#475569' }); commit('settings'); return; }
+  if(t.id === 'logoutB'){ sb.auth.signOut().then(() => { S.user=null; S.cloud=false; S.isAdmin=false; if(channel) sb.removeChannel(channel); renderLoginBtn(); setSync('local'); render(); }); return; }
+  if(t.id === 'loginB2'){ loginModal(); return; }
+  if(t.id === 'reloadCloud'){ startCloud(); return; }
+});
+// map marker erase (pointerdown, so it works over canvas)
+document.addEventListener('pointerdown', e => {
+  const mk = e.target.closest('.mk'); if(!mk || !S.edit || S.tab!=='map') return;
+  if(S.pen.mode === 'erase' || S.pen.mode === 'marker'){ e.preventDefault(); e.stopPropagation();
+    if(S.pen.mode==='marker' && !confirm('Энэ тэмдгийг устгах уу?')) return;
+    const w = curWeek(); w.map.markers = w.map.markers.filter(m => m.id !== mk.dataset.mk); commit(wkey()); }
+}, true);
+// mini map / mini ink → open tab
+document.addEventListener('click', e => {
+  if(e.target.closest('#mapMini')){ S.tab='map'; localStorage.setItem('lif:tab','map'); render(); }
+  else if(e.target.closest('#inkMeetMini')){ S.tab='meet'; localStorage.setItem('lif:tab','meet'); render(); }
+});
+// long-press on chip → menu
+let lpTimer = null, longPressed = false;
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest('[data-chip]'); if(!c || !S.edit) return;
+  longPressed = false;
+  lpTimer = setTimeout(() => { longPressed = true; const [code, day, id] = c.dataset.chip.split('|'); chipMenu(code, +day, id); }, 550);
+});
+['pointerup','pointercancel','pointermove'].forEach(ev => document.addEventListener(ev, e => { if(ev==='pointermove' && Math.abs(e.movementX)+Math.abs(e.movementY) < 4) return; clearTimeout(lpTimer); }));
+document.addEventListener('contextmenu', e => { const c = e.target.closest('[data-chip]'); if(c){ e.preventDefault(); clearTimeout(lpTimer); longPressed = true; const [code, day, id] = c.dataset.chip.split('|'); chipMenu(code, +day, id); } });
+
+document.addEventListener('submit', e => {
+  if(e.target.id === 'riskForm'){ e.preventDefault(); const f = e.target; const rs = getDoc('risks', ()=>({list:[]}));
+    rs.list.unshift({ id:uid(), text:f.text.value.trim(), level:f.level.value, area:f.area.value.trim(), owner:f.owner.value.trim(), date:ymd(new Date()), closed:false }); commit('risks'); }
+  if(e.target.id === 'exForm'){ e.preventDefault(); const f = e.target; settings().extraPeople.push({ id:'x'+uid(), name:f.name.value.trim(), role:f.role.value.trim(), dept:f.dept.value.trim() }); commit('settings'); }
+});
+document.addEventListener('change', e => {
+  const d = e.target.dataset;
+  if(e.target.id === 'setTitle'){ settings().title = e.target.value; commit('settings'); }
+  if(e.target.id === 'setWs'){ settings().weekStart = +e.target.value; commit('settings'); }
+  if(d.tcode !== undefined){ settings().types[+d.tcode].code = e.target.value.trim().toUpperCase() || 'X'; commit('settings'); }
+  if(d.tname !== undefined){ settings().types[+d.tname].name = e.target.value; commit('settings'); }
+  if(d.tcolor !== undefined){ settings().types[+d.tcolor].color = e.target.value; commit('settings'); }
+  if(d.note){ const m = curMonth(); m.notes = m.notes||{}; m.notes[d.note] = e.target.value; commit(mkey(), {noRender:true}); }
+  if(e.target.id === 'pdept'){ S.pdept = e.target.value; render(); }
+});
+document.addEventListener('input', e => { if(e.target.id === 'pq'){ S.pq = e.target.value; const pos = e.target.selectionStart; render(); const n = $('#pq'); n.focus(); n.setSelectionRange(pos,pos); } });
+
+$('#prevW').onclick = () => { S.date = addDays(S.date, -7); render(); };
+$('#nextW').onclick = () => { S.date = addDays(S.date, 7); render(); };
+$('#todayB').onclick = () => { S.date = new Date(); render(); };
+$('#dateIn').onchange = e => { if(e.target.value){ S.date = parseYmd(e.target.value); render(); } };
+$('#btnEdit').onclick = () => { S.edit = !S.edit; localStorage.setItem('lif:edit', S.edit?'1':'0'); render(); };
+$('#btnFull').onclick = () => { const d = document; if(!d.fullscreenElement) (d.documentElement.requestFullscreen||d.documentElement.webkitRequestFullscreen)?.call(d.documentElement); else d.exitFullscreen?.(); };
+$('#btnLogin').onclick = () => { if(S.user){ S.tab='set'; render(); } else loginModal(); };
+$('#btnBackup').onclick = () => {
+  const out = { app:'lif-board', v:1, at:new Date().toISOString(), docs:S.docs };
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(out)], {type:'application/json'}));
+  a.download = `lif-board-backup-${ymd(new Date())}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+};
+$('#btnRestore').onclick = () => $('#restoreFile').click();
+$('#restoreFile').onchange = e => {
+  const f = e.target.files[0]; if(!f) return; const rd = new FileReader();
+  rd.onload = () => { try{ const j = JSON.parse(rd.result); if(j.app !== 'lif-board' || !j.docs) throw 0;
+    if(!confirm('Backup-аас сэргээх үү? Одоогийн ижил долоо хоног/сарын мэдээлэл солигдоно.')) return;
+    for(const [k,v] of Object.entries(j.docs)){ S.docs[k] = { data:v.data, t:Date.now() }; saveLocal(k); S.dirty.add(k); }
+    queuePush(); render(); toast('Сэргээлээ'); } catch(err){ toast('Буруу backup файл', true); } };
+  rd.readAsText(f); e.target.value = '';
+};
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+// шөнө дунд өдөр солигдоход шинэчлэх
+let lastDay = ymd(new Date());
+setInterval(() => { const n = ymd(new Date()); if(n !== lastDay){ if(ymd(S.date) === lastDay) S.date = new Date(); lastDay = n; if(!S.drawing && !$('#modal').classList.contains('open')) render(); } }, 60000);
+window.addEventListener('resize', () => {});
+
+/* ================= boot ================= */
+loadLocal();
+render();
+setSync('local');
+renderLoginBtn();
+if(sb) sb.auth.onAuthStateChange((ev) => { if(ev === 'SIGNED_OUT'){ S.user = null; renderLoginBtn(); } });
+startCloud();
+</script>
+</body>
+</html>
