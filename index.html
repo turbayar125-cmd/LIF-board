@@ -162,26 +162,25 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .scnt{font-size:.82rem;font-weight:800;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:1rem;padding:.1rem .5rem;white-space:nowrap;min-width:2.6rem;text-align:center}
 .scnt.z{opacity:.45}
 .star{transition:transform .15s} .star:active{transform:scale(1.3)}
-#starpop{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:rgba(20,18,10,.55)}
-#starpop.show{display:grid;animation:spFade .2s ease-out}
-.sp-card{position:relative;overflow:hidden;background:linear-gradient(160deg,#fffbea,#fff 55%);border-radius:1.6rem;padding:2.4rem 3.4rem 2rem;text-align:center;min-width:30rem;box-shadow:0 2rem 5rem rgba(0,0,0,.35);border:3px solid var(--y);animation:spPop .45s cubic-bezier(.2,1.6,.4,1)}
-.sp-rays{position:absolute;left:50%;top:5.5rem;width:40rem;height:40rem;margin:-20rem 0 0 -20rem;background:repeating-conic-gradient(rgba(255,194,14,.18) 0 10deg,transparent 10deg 20deg);animation:spSpin 6s linear infinite;pointer-events:none}
-.sp-av{position:relative;width:9rem;height:9rem;margin:0 auto 1rem}
-.sp-av img,.sp-av span{width:100%;height:100%;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:var(--y);font-size:3rem;font-weight:900;border:5px solid #fff;box-shadow:0 .4rem 1.2rem rgba(0,0,0,.2)}
-.sp-star{position:absolute;right:-1.4rem;bottom:-1rem;font-style:normal;font-size:5rem;line-height:1;color:#f59e0b;text-shadow:0 0 1.2rem rgba(255,194,14,.9),0 .2rem .3rem rgba(0,0,0,.25);animation:spStar .7s cubic-bezier(.2,1.8,.4,1) .1s both}
-.sp-lbl{position:relative;font-size:1rem;font-weight:800;color:#b45309;letter-spacing:.03em}
-.sp-name{position:relative;font-size:2.4rem;font-weight:900;margin:.3rem 0 .2rem}
-.sp-role{position:relative;font-size:1.15rem;color:var(--mut);font-weight:600}
-.sp-n{position:relative;margin-top:1rem;font-size:1.3rem}
-.sp-n b{color:#d97706;font-size:1.8rem}
-.sp-undo{position:relative;margin-top:1rem;font-size:.95rem;font-weight:700;padding:.45rem 1.1rem;border-radius:.5rem;border:1px solid var(--line2);background:#fff}
-.sp-bar{position:absolute;left:0;bottom:0;height:.35rem;background:var(--y);animation:spBar 2s linear forwards}
+#starpop{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:radial-gradient(ellipse at 50% 40%,rgba(52,92,150,.82),rgba(14,30,60,.92));backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+#starpop.show{display:grid;animation:spFade .25s ease-out}
+.sp-wrap{text-align:center;color:#fff;padding:2rem;animation:spPop .5s cubic-bezier(.2,1.4,.4,1)}
+.sp-photo{width:15rem;height:15rem;margin:0 auto;border-radius:50%;padding:.55rem;background:linear-gradient(145deg,#f7e7a1,#c9a03c 45%,#f3d77a 70%,#a87f22);box-shadow:0 0 0 .25rem rgba(255,255,255,.15),0 1.2rem 3rem rgba(0,0,0,.45),0 0 3rem rgba(247,215,110,.35)}
+.sp-photo img,.sp-photo span{width:100%;height:100%;border-radius:50%;object-fit:cover;display:grid;place-items:center;background:#f4f1ea;color:#1d1d1b;font-size:4.5rem;font-weight:900;border:.3rem solid #fffdf3}
+.sp-spin{margin:1.6rem auto .4rem;height:5.2rem;perspective:30rem}
+.sp-spin span{display:inline-block;font-size:5.2rem;line-height:1;color:#fff;text-shadow:0 0 1.2rem rgba(255,255,255,.85),0 0 2.6rem rgba(255,214,90,.75);animation:spRot 1.1s linear infinite}
+.sp-name{font-size:4.4rem;font-weight:900;font-style:italic;letter-spacing:.01em;line-height:1.05;text-shadow:0 .25rem .8rem rgba(0,0,0,.45)}
+.sp-role{font-size:2.1rem;font-weight:800;font-style:italic;margin-top:.35rem;text-shadow:0 .2rem .6rem rgba(0,0,0,.4)}
+.sp-cap{font-size:1.05rem;font-weight:600;margin-top:.9rem;opacity:.85}
+.sp-cnt{display:inline-block;margin-top:1rem;font-size:1.2rem;font-weight:700;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:2rem;padding:.4rem 1.1rem}
+.sp-cnt b{color:#fde68a;font-size:1.45rem;margin-left:.3rem}
+.sp-undo{display:block;margin:1.1rem auto 0;font-size:.9rem;font-weight:700;padding:.45rem 1.1rem;border-radius:.5rem;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff}
+.sp-bar{position:fixed;left:0;bottom:0;height:.4rem;background:linear-gradient(90deg,#f7e7a1,#c9a03c);animation:spBar 2.5s linear forwards}
 @keyframes spFade{from{opacity:0}}
-@keyframes spPop{from{transform:scale(.6);opacity:0}}
-@keyframes spStar{from{transform:scale(0) rotate(-120deg)}}
-@keyframes spSpin{to{transform:rotate(360deg)}}
+@keyframes spPop{from{transform:scale(.85);opacity:0}}
+@keyframes spRot{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
 @keyframes spBar{from{width:100%}to{width:0}}
-@media (prefers-reduced-motion:reduce){.sp-card,.sp-star,.sp-rays,#starpop.show{animation:none}}
+@media (prefers-reduced-motion:reduce){.sp-wrap,#starpop.show{animation:none}.sp-spin span{animation-duration:3s}}
 /* v2 нэмэлт */
 .lx{margin-left:.2rem;width:1.4rem;height:1.4rem;border-radius:50%;background:#fff;border:1px solid var(--line2);font-weight:800;line-height:1;color:var(--mut)}
 .mtext{font-size:.85rem;line-height:1.35;background:#fffbea;border:1px solid var(--line);border-radius:.45rem;padding:.35rem .5rem;margin-bottom:.4rem;white-space:pre-wrap;max-height:6.5rem;overflow:auto}
@@ -205,6 +204,11 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 body.display .tabs, body.display #btnEdit, body.display .sub .sync, body.display .sub .sbtn:not(#todayB), body.display .datenav input{display:none!important}
 body.display .sub{padding:.35rem 1rem}
 body:not(.view) .ed{} body.view .ed{display:none}
+.arch{border:1px solid var(--line);border-radius:.7rem;margin-bottom:.7rem;overflow:hidden}
+.arch-h{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;background:#fbf8ef;border-bottom:1px solid var(--line)}
+.arch-h .sp{flex:1}
+.arch-l{display:flex;flex-wrap:wrap;gap:.45rem;padding:.6rem .8rem}
+.arch-p{display:inline-flex;align-items:center;gap:.4rem;background:#fff;border:1px solid var(--line);border-radius:2rem;padding:.2rem .3rem .2rem .2rem;font-size:.9rem}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -526,7 +530,11 @@ function matchPerson(n, list){
 const featDoc = () => peek('featured', () => ({ list:[] }));
 // Од (онцлох ярилцлага хийсэн) — бүх цаг үеийн бүртгэл
 const starLog = () => peek('stars', () => ({ log:[] })).log || [];
-function starInfo(name){ const k = normName(name), today = ymd(new Date()), days = new Set(); for(const e of starLog()) if(normName(e.name) === k) days.add(e.date); return { n:days.size, today:days.has(today) }; } // нэг өдөрт нэг од
+// Од: нэг хүнд нэг өдөрт нэг; тоо нь тухайн 7 хоногийнх, өмнөх 7 хоногийнх архивт үлдэнэ
+const starWeek = e => weekKey(parseYmd(e.date));
+function starInfo(name, wk){ wk = wk || weekKey(S.date); const k = normName(name), today = ymd(new Date()), days = new Set(); let td = false;
+  for(const e of starLog()) if(normName(e.name) === k){ if(e.date === today) td = true; if(starWeek(e) === wk) days.add(e.date); }
+  return { n:days.size, today:td }; }
 function allPeople(){
   const base = basePeople();
   const fl = (featDoc().list||[]).filter(f => !matchPerson(f.name, base)).map(f => ({ id:'f'+f.name, name:f.name, role:f.role||'', dept:f.dept||'', photo:'', feat:true }));
@@ -648,7 +656,7 @@ function peopleListHTML(limit){
   if(!ps.length) return `<div class="empty"><div><b>Ажилтны жагсаалт хоосон</b>Нэвтэрмэгц сургалтын системээс автоматаар татагдана, эсвэл Тохиргоо → нэмэлт хүн.</div></div>`;
   ps = ps.map(p => ({...p, si:starInfo(p.name)})).sort((a,b) => a.name.localeCompare(b.name));
   if(limit) ps = ps.slice(0, limit);
-  return `<div class="plist">${ps.map(p => `<div class="prow">${avatar(p,'sm')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role||p.dept)}</small></div><span class="scnt ${p.si.n?'':'z'}" title="Нийт авсан од">★ ${p.si.n}</span><button class="star ${p.si.today?'on':''}" data-star="${esc(p.name)}" aria-label="Онцлох ярилцлага хийсэн">★</button></div>`).join('')}</div>`;
+  return `<div class="plist">${ps.map(p => `<div class="prow">${avatar(p,'sm')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role||p.dept)}</small></div><span class="scnt ${p.si.n?'':'z'}" title="Энэ 7 хоногт авсан од">★ ${p.si.n}</span><button class="star ${p.si.today?'on':''}" data-star="${esc(p.name)}" aria-label="Онцлох ярилцлага хийсэн">★</button></div>`).join('')}</div>`;
 }
 
 function meetingPeopleHTML(big){
@@ -694,7 +702,7 @@ function viewDash(){
   return `<div class="dash">${kpis}
     <div class="colL">
       <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {head:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {head:'qual'})}</div>
-      ${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'grow', more:'people'})}
+      ${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'grow', more:'people', right:'<button class="more" data-sarch="1" title="Өмнөх 7 хоногуудын од">🗂</button>'})}
     </div>
     <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridBody(), {cls:'grow', more:'grid', right: gridTools() + `<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
     <div class="colR">
@@ -763,12 +771,12 @@ function viewPeople(){
   const fd = featDoc();
   const tb = `<div class="bar"><div class="seg"><button data-pmode="feat" class="${mode==='feat'?'on':''}">★ Онцлох жагсаалт (${fl.length})</button><button data-pmode="all" class="${mode==='all'?'on':''}">Бүх ажилтан (${allPeople().length})</button></div>
     ${S.edit ? `<button class="btn y" data-featimp="1">⬆ Excel-ээс оруулах</button><button class="btn" data-feattpl="1">⬇ Загвар Excel</button>${fl.length?'<button class="btn danger" data-featclr="1">Жагсаалт цэвэрлэх</button>':''}` : ''}
-    ${fd.src ? `<span class="note">Сүүлд: ${esc(fd.src)} · ${esc(fd.at||'')}</span>` : ''}</div>`;
+    <button class="btn" data-sarch="1">🗂 Одны архив</button>${fd.src ? `<span class="note">Сүүлд: ${esc(fd.src)} · ${esc(fd.at||'')}</span>` : ''}</div>`;
   let ps = src.filter(p => (!dept || p.dept===dept) && (!q || (p.name+' '+p.role).toLowerCase().includes(q)));
   ps.sort((a,b) => ((st.perName[b.name]?.ok||0) - (st.perName[a.name]?.ok||0)) || a.name.localeCompare(b.name));
   const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
-  return panel('6', mode==='feat' ? `Онцлох ярилцлага (${ps.length})` : `Хүмүүс (${ps.length})`, tb + (mode==='feat' && !fl.length ? `<div class="empty" style="height:auto;margin-bottom:.6rem"><div><b>Онцлох жагсаалт хоосон</b>“Excel-ээс оруулах” товчоор жагсаалтаа оруулна. Нэр, албан тушаал, алба баганатай ямар ч Excel ажиллана.</div></div>` : '') + `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ N = нийт авсан од · ★ дарахад өнөөдрийн онцлох ярилцлагад од нэмнэ</span></div>
-    ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${S.edit ? `<button class="avbtn" data-photo="${esc(p.name)}" title="Зураг оруулах">${avatar(p,'lg')}<i>📷</i></button>` : avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}" title="Энэ долоо хоногт хийсэн engagement">${s?.ok||0}</span>${(si => `<span class="scnt ${si.n?'':'z'}" title="Нийт авсан од">★ ${si.n}</span><button class="star ${si.today?'on':''}" data-star="${esc(p.name)}">★</button>`)(starInfo(p.name))}</div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
+  return panel('6', mode==='feat' ? `Онцлох ярилцлага (${ps.length})` : `Хүмүүс (${ps.length})`, tb + (mode==='feat' && !fl.length ? `<div class="empty" style="height:auto;margin-bottom:.6rem"><div><b>Онцлох жагсаалт хоосон</b>“Excel-ээс оруулах” товчоор жагсаалтаа оруулна. Нэр, албан тушаал, алба баганатай ямар ч Excel ажиллана.</div></div>` : '') + `<div class="bar"><input class="inp" id="pq" placeholder="Хайх…" value="${esc(S.pq||'')}" style="width:20rem"><select class="inp" id="pdept"><option value="">Бүх алба</option>${depts.map(d=>`<option ${d===dept?'selected':''}>${esc(d)}</option>`).join('')}</select><span class="note">Тоо = энэ долоо хоногт хийсэн engagement · ★ N = энэ 7 хоногт авсан од · ★ дарахад өнөөдрийн онцлох ярилцлагад од нэмнэ</span></div>
+    ${ps.length ? `<div class="pgrid">${ps.map(p => { const s = st.perName[p.name]; return `<div class="pcard">${S.edit ? `<button class="avbtn" data-photo="${esc(p.name)}" title="Зураг оруулах">${avatar(p,'lg')}<i>📷</i></button>` : avatar(p,'lg')}<div class="i"><b>${esc(p.name)}</b><small>${esc(p.role)}${p.dept?' · '+esc(p.dept):''}</small><div class="tags">${s?[...s.codes].map(c=>`<span class="tag" style="background:${col(c)}">${esc(c)}</span>`).join(''):''}</div></div><span class="cnt ${s?.ok?'':'z'}" title="Энэ долоо хоногт хийсэн engagement">${s?.ok||0}</span>${(si => `<span class="scnt ${si.n?'':'z'}" title="Энэ 7 хоногт авсан од">★ ${si.n}</span><button class="star ${si.today?'on':''}" data-star="${esc(p.name)}">★</button>`)(starInfo(p.name))}</div>`; }).join('')}</div>` : '<div class="empty"><div><b>Хүн олдсонгүй</b></div></div>'}`, {cls:'full'});
 }
 function viewSched(){
   return panel('7', 'Main Schedule / Хуваарь', `<div style="height:calc(100% - 3.6rem)">${imgDocHTML('schedule','Хуваарийн зураг оруулаагүй','Хуваарийн зураг, PDF-ийн screenshot г.м.')}</div>${S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn y" data-upimg="schedule">Зураг оруулах / солих</button><button class="btn danger" data-rmimg="schedule">Устгах</button></div>`:''}`, {cls:'full'});
@@ -989,6 +997,7 @@ function pickImage(cb, maxPx){
 /* ================= Од өгөх ================= */
 let starTimer = null;
 function addStar(name){
+  if(weekKey(S.date) !== weekKey(new Date())){ toast('Од зөвхөн энэ 7 хоногт өгнө — “Өнөөдөр” дээр дарна уу', true); return; }
   const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log || [];
   const today = ymd(new Date()), k = normName(name);
   // өмнө нь нэг өдөрт давхар өгсөн бол цэвэрлэнэ
@@ -999,24 +1008,37 @@ function addStar(name){
   if(!already || sd.log.length !== before) commit('stars');
   const f = (featDoc().list||[]).find(x => normName(x.name) === normName(name));
   const m = personByName(name) || { name };
-  showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || '' }, starInfo(name).n, e.id, already);
+  showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || photoOf(name) || photoOf(m.name) || '' }, starInfo(name, weekKey(new Date())).n, e.id, already);
 }
 function showStarPop(p, n, id, already){
   let el = $('#starpop'); if(!el){ el = document.createElement('div'); el.id = 'starpop'; document.body.appendChild(el); }
   const d = new Date();
-  el.innerHTML = `<div class="sp-card">
-    <div class="sp-rays"></div>
-    <div class="sp-av">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : `<span>${esc(initials(p.name).toUpperCase())}</span>`}<i class="sp-star">★</i></div>
-    <div class="sp-lbl">Онцлох ярилцлага · ${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}</div>
+  el.innerHTML = `<div class="sp-wrap">
+    <div class="sp-photo">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : `<span>${esc(initials(p.name).toUpperCase())}</span>`}</div>
+    <div class="sp-spin"><span>★</span></div>
     <div class="sp-name">${esc(p.name)}</div>
-    <div class="sp-role">${esc([p.role, p.dept].filter(Boolean).join(' · '))}</div>
-    <div class="sp-n"><b>★ ${n}</b> од</div>${already ? '<div class="sp-role" style="margin-top:.4rem;color:#b45309">Өнөөдөр аль хэдийн од авсан — нэг өдөрт нэг од</div>' : ''}
+    ${p.role || p.dept ? `<div class="sp-role">${esc(p.role || p.dept)}</div>` : ''}
+    <div class="sp-cap">Тухайн өдрийн шилдэг ярилцлага · ${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}</div>
+    <div class="sp-cnt">Энэ 7 хоногт <b>★ ${n}</b></div>
+    ${already ? '<div class="sp-cap" style="color:#fde68a">Өнөөдөр аль хэдийн од авсан — нэг өдөрт нэг од</div>' : ''}
     <button class="sp-undo" data-unstar="${esc(id)}">${already ? 'Өнөөдрийн одыг цуцлах' : 'Буцаах'}</button>
-    <div class="sp-bar"></div></div>`;
+  </div><div class="sp-bar"></div>`;
   el.className = 'show';
-  clearTimeout(starTimer); starTimer = setTimeout(hideStarPop, 2000);
+  clearTimeout(starTimer); starTimer = setTimeout(hideStarPop, 2500);
 }
 function hideStarPop(){ const el = $('#starpop'); if(el){ el.className = ''; } clearTimeout(starTimer); }
+
+function starArchive(){
+  const by = {};
+  for(const e of starLog()){ const wk = starWeek(e); const o = by[wk] = by[wk] || { first:e.date, per:{} }; if(e.date < o.first) o.first = e.date; const k = normName(e.name); (o.per[k] = o.per[k] || { name:e.name, days:new Set() }).days.add(e.date); }
+  const cur = weekKey(new Date());
+  const wks = Object.keys(by).sort().reverse();
+  const body = wks.length ? wks.map(wk => { const o = by[wk], ds = weekDays(parseYmd(o.first)), rows = Object.values(o.per).sort((a,b) => b.days.size - a.days.size || a.name.localeCompare(b.name)), tot = rows.reduce((n,r) => n + r.days.size, 0);
+    return `<div class="arch"><div class="arch-h"><b>${wk}</b><span class="note">${ds[0].getMonth()+1}/${ds[0].getDate()} – ${ds[6].getMonth()+1}/${ds[6].getDate()}</span>${wk === cur ? '<span class="chip-s" style="background:var(--y)">Энэ 7 хоног</span>' : '<span class="chip-s">Архив</span>'}<span class="sp"></span><span class="scnt">★ ${tot}</span><button class="btn" data-sweek="${ymd(ds[0])}">Нээх</button></div>
+      <div class="arch-l">${rows.map(r => `<span class="arch-p">${avatar(personByName(r.name) || {name:r.name}, 'sm')}<b>${esc(r.name)}</b><span class="scnt">★ ${r.days.size}</span></span>`).join('')}</div></div>`; }).join('')
+    : '<div class="empty" style="height:auto;min-height:8rem"><div><b>Од өгөөгүй байна</b></div></div>';
+  openModal(`<div class="mh"><h2>🗂 Онцлох ярилцлагын одны архив</h2><button class="x" data-close="1">×</button></div><div class="mb">${body}</div>`);
+}
 
 /* ================= Excel → онцлох жагсаалт ================= */
 let xlsxP = null;
@@ -1233,6 +1255,8 @@ document.addEventListener('click', e => {
     if(Object.values(g).some(arr => arr && arr[n-1] && arr[n-1].name)){ toast('Сүүлийн мөрөнд нэр байна — эхлээд цэвэрлэнэ үү', true); return; }
     Object.values(g).forEach(arr => { if(arr) arr.length = Math.min(arr.length, n-1); }); w.rows = w.rows||{}; w.rows[d.rowdel] = n-1; commit(wkey()); return; }
   if(d.star){ addStar(d.star); return; }
+  if(d.sarch){ starArchive(); return; }
+  if(d.sweek){ S.date = weekStartDate(parseYmd(d.sweek)); closeModal(); render(); return; }
   if(d.unstar){ const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log.filter(x => x.id !== d.unstar); hideStarPop(); commit('stars'); toast('Одыг буцаалаа'); return; }
   if(d.madd){ pickPerson({ title:'Хурал хийх хүн нэмэх', multi:true, onPick:n => { const m = curWeek().meeting; if(!m.people.includes(n)) m.people.push(n); commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
   if(d.mrm){ const m = curWeek().meeting; m.people = m.people.filter(x=>x!==d.mrm); commit(wkey()); return; }
