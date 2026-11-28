@@ -300,6 +300,11 @@ body.night .slotb.blank .plus{color:#a9c4d8}
 .sflist.big{display:grid;grid-template-columns:repeat(auto-fill,minmax(44rem,1fr));align-content:start;gap:.5rem}
 .sflist.big .sfr{padding:.6rem .8rem} .sflist.big .sfr b{font-size:1.3rem} .sflist.big .sfr small{font-size:.95rem} .sflist.big .nn{font-size:2rem}
 body.night .sfr .bar{background:#dbe9f3}
+.sfr .nn em{font-style:normal;font-size:.62em;font-weight:700;color:var(--mut);margin-left:.15em}
+.sfr .nn{min-width:3.6rem}
+.sfr .bar.ok i{background:var(--ok)} .sfr .bar.mid i{background:var(--y)} .sfr .bar.no{background:#fee2e2}
+.sfr .nn.no{color:var(--bad)} .sfr .nn.ok{color:var(--ok)}
+.sfcap{display:flex;justify-content:space-between;font-size:.7rem;color:var(--mut);padding:0 .5rem .2rem;flex:none}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -936,19 +941,32 @@ function safeHTML(big){
   return h + `</table></div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
 }
 // Бүтэцтэй Safeday: нэр + зураг + ярилцлагын тоо, ихээс бага руу
+// 4 Мэдээлэл хүснэгтэд энэ 7 хоногт хэн хэдэн удаа (сэдэв) гарсныг тоолох
+function gridTopicCounts(){
+  const out = {}; // normName → {name, n}
+  for(const t of Object.values(curWeek().grid || {})) for(const arr of Object.values(t)) for(const e of arr || []) if(e && e.name){ const k = normName(e.name); (out[k] = out[k] || { name:e.name, n:0 }).n++; }
+  return out;
+}
 function safeListHTML(d, big){
-  const rows = d.list.slice().sort((a,b) => (b.n||0) - (a.n||0) || a.name.localeCompare(b.name));
+  const gc = gridTopicCounts(), gl = Object.values(gc), used = new Set();
+  const topicsOf = name => { const k = normName(name); let g = gc[k]; if(!g){ const m = matchPerson(name, gl); if(m) g = gc[normName(m.name)]; } if(!g){ const fn = firstName(name).toLowerCase(); const c = gl.filter(x => firstName(x.name).toLowerCase() === fn); if(c.length === 1) g = c[0]; } if(g) used.add(normName(g.name)); return g ? g.n : 0; };
+  let rows = d.list.map(r => ({ ...r, t: topicsOf(r.name) }));
+  // 4 Мэдээлэлд байгаа ч Safeday-д байхгүй хүмүүс
+  for(const g of gl) if(!used.has(normName(g.name))) rows.push({ name:g.name, role:'', n:0, t:g.n });
+  rows.sort((a,b) => (b.n||0) - (a.n||0) || (b.t||0) - (a.t||0) || a.name.localeCompare(b.name));
   if(!rows.length) return `<div class="empty" style="height:100%"><div><b>${S.shift==='night'?'Шөнийн':'Өдрийн'} ээлжийн мэдээлэл алга</b></div></div>`;
-  const max = rows[0].n || 0, tot = rows.reduce((t,r) => t + (r.n||0), 0), act = rows.filter(r => r.n > 0).length;
+  const tot = rows.reduce((t,r) => t + (r.n||0), 0), totT = rows.reduce((t,r) => t + (r.t||0), 0), act = rows.filter(r => r.n > 0).length;
   let rank = 0, prev = null;
   const items = rows.map((r, i) => {
     if(r.n !== prev){ rank = i + 1; prev = r.n; }
     const f = (featDoc().list||[]).find(x => normName(x.name) === normName(r.name));
     const p = personByName(r.name) || { name:r.name }; const role = r.role || f?.role || p.role || '';
-    return `<div class="sfr ${r.n>0?'':'z'}"><span class="rk">${r.n>0 ? rank : ''}</span>${avatar(p, big?'lg':'')}<div class="i"><b>${esc(r.name)}</b><small>${esc(role)}</small></div>
-      <div class="bar"><i style="width:${max ? Math.round((r.n||0)*100/max) : 0}%"></i></div><span class="nn">${r.n||0}</span></div>`;
+    const pct = r.t ? Math.min(100, Math.round((r.n||0) * 100 / r.t)) : (r.n ? 100 : 0);
+    const cls = !r.t ? '' : r.n >= r.t ? 'ok' : r.n > 0 ? 'mid' : 'no';
+    return `<div class="sfr ${r.n>0||r.t>0?'':'z'}"><span class="rk">${r.n>0 ? rank : ''}</span>${avatar(p, big?'lg':'')}<div class="i"><b>${esc(r.name)}</b><small>${esc(role)}</small></div>
+      <div class="bar ${cls}" title="Safeday-д оруулсан / 4 Мэдээлэл дэх сэдэв"><i style="width:${pct}%"></i></div><span class="nn ${cls}">${r.n||0}<em>/ ${r.t||0}</em></span></div>`;
   }).join('');
-  return `<div class="sfhead"><span>${S.shift==='night'?'☾ Шөнө':'☀ Өдөр'} · <b>${act}</b> хүн ярилцлага хийсэн</span><span>Нийт <b>${tot}</b></span></div><div class="sflist ${big?'big':''}">${items}</div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
+  return `<div class="sfhead"><span>${S.shift==='night'?'☾ Шөнө':'☀ Өдөр'} · <b>${act}</b> хүн оруулсан</span><span>Оруулсан <b>${tot}</b> / сэдэв <b>${totT}</b></span></div><div class="sfcap"><span>Нэр</span><span>Safeday оруулсан / авсан сэдэв</span></div><div class="sflist ${big?'big':''}">${items}</div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
 }
 function fitSafe(){
   document.querySelectorAll('.safewrap').forEach(w => {
