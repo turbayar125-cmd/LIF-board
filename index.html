@@ -259,6 +259,21 @@ body.night .slotb.blank .plus{color:#a9c4d8}
 .topr.now{border-color:#f59e0b;background:#fffbeb}
 .dash2 .d-top .panel{min-height:0}
 @media (max-width:900px){.dash2{display:flex;flex-direction:column;height:auto}.d-top{grid-template-columns:1fr}.d-top .panel,.d-feat,.d-grid{min-height:20rem}}
+.tp .pb{display:flex;flex-direction:column;gap:.4rem}
+.tp .tpimg{flex:1;min-height:0;height:auto;cursor:zoom-in}
+.tp .mtext{flex:none}
+#zoomov{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;animation:spFade .2s}
+#zoomov .zh{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;background:var(--y);flex:none}
+#zoomov .zh h2{margin:0;font-size:1.5rem;display:flex;align-items:center;gap:.6rem}
+#zoomov .zh h2 .n{display:inline-grid;place-items:center;min-width:2rem;height:2rem;border-radius:.5rem;background:var(--ink);color:var(--y);font-size:1.1rem}
+#zoomov .zh .sp{flex:1} #zoomov .zpct{font-weight:800;min-width:3.5rem;text-align:center}
+#zoomov .zb{flex:1;min-height:0;display:flex;gap:1rem;padding:1rem}
+#zoomov .zside{width:32rem;flex:none;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:.8rem;padding:1rem}
+#zoomov .zb:not(.hasimg) .zside{width:auto;flex:1}
+#zoomov .zimg{flex:1;min-width:0;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:.8rem;display:flex;align-items:flex-start;justify-content:center}
+#zoomov .zimg img{display:block;height:auto;max-width:none}
+#zoomov .zimg.fit{overflow:hidden;align-items:stretch}
+#zoomov .zimg.fit img{width:100%;height:100%;object-fit:contain}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -771,6 +786,32 @@ function risksHTML(compact){
   return list.slice(0, compact ? 6 : 999).map(r => `<div class="risk ${r.closed?'closed':''}"><span class="lv ${r.level}">${LV[r.level]}</span><div class="i"><b>${esc(r.text)}</b><small>${esc([r.area, r.owner, r.date].filter(Boolean).join(' · '))}</small></div>${!compact && S.edit ? `<button class="btn" data-rclose="${r.id}">${r.closed?'Сэргээх':'Хаах'}</button><button class="btn danger" data-rdel="${r.id}">Устгах</button>`:''}</div>`).join('');
 }
 
+// Дээд 3 самбар (Хуваарь / Хурал / Эрсдэл): зураг оруулах + бүтэн дэлгэцээр томруулах
+const TOPS = { sched:{ n:'7', t:'Хуваарь' }, meet:{ n:'3', t:'Хурал' }, risk:{ n:'5', t:'Эрсдэл' } };
+const topImg = k => k === 'sched' ? peek('schedule', ()=>({})).img : k === 'meet' ? curWeek().meeting.img : peek('riskimg', ()=>({})).img;
+function topBtns(k){ return (S.edit ? `<button class="more" data-tupl="${k}" title="Зураг оруулах">📷</button>` : '') + `<button class="more" data-zoom="${k}" title="Томруулах">⛶</button>`; }
+function topBody(k, big){
+  const img = topImg(k), im = img ? `<img class="imgbox tpimg" data-zk="${k}" src="${img}" alt="">` : '';
+  if(k === 'sched') return im || `<div class="empty"><div><b>Зураг оруулаагүй</b>${S.edit?'📷 дарж хуваарийн зургаа оруулна':''}</div></div>`;
+  if(k === 'meet'){ const m = curWeek().meeting;
+    return (m.text ? `<div class="mtext" ${big?'style="max-height:none;font-size:1.3rem"':''}>${esc(m.text)}</div>` : '') + meetingPeopleHTML(true) + (im || (big ? '' : `<div class="inkwrap" id="inkMeetMini" style="flex:1;min-height:3rem"></div>`)); }
+  const dt = peek(dkey(), ()=>({})).risk;
+  const body = (dt ? `<div class="mtext risk" ${big?'style="max-height:none;font-size:1.3rem"':''}>${esc(dt)}</div>` : '') + (risksHTML(!big) || '');
+  return body + im || `<div class="empty"><div><b>Нээлттэй эрсдэл алга</b>${S.edit?'📷 дарж зураг оруулна':''}</div></div>`;
+}
+function openZoom(k){ S.zoom = k; S.zs = 1; renderZoom(); }
+function renderZoom(){
+  let el = $('#zoomov');
+  if(!S.zoom){ if(el) el.remove(); return; }
+  if(!el){ el = document.createElement('div'); el.id = 'zoomov'; document.body.appendChild(el); }
+  const k = S.zoom, T = TOPS[k], img = topImg(k);
+  el.innerHTML = `<div class="zh"><h2><span class="n">${T.n}</span>${T.t}</h2><span class="sp"></span>
+    ${img ? `<button class="btn" data-zs="-1">−</button><span class="zpct">${Math.round(S.zs*100)}%</span><button class="btn" data-zs="1">+</button><button class="btn" data-zs="0">⟲</button>` : ''}
+    ${S.edit ? `<button class="btn" data-tupl="${k}">📷 Зураг ${img?'солих':'оруулах'}</button>${img?`<button class="btn danger" data-tuplrm="${k}">Зураг устгах</button>`:''}` : ''}
+    <button class="btn pri" data-zclose="1">✕ Жижигрүүлэх</button></div>
+    <div class="zb ${img?'hasimg':''}">${k === 'sched' ? '' : `<div class="zside">${topBody(k, true).replace(/<img class="imgbox tpimg"[^>]*>/, '')}</div>`}
+      ${img ? `<div class="zimg ${S.zs===1?'fit':''}"><img src="${img}" alt="" style="${S.zs===1?'':`width:${S.zs*100}%`}"></div>` : (k === 'sched' ? '<div class="empty"><div><b>Зураг оруулаагүй</b></div></div>' : '')}</div>`;
+}
 function imgDocHTML(key, emptyTitle, emptyText){
   const d = peek(key, ()=>({}));
   if(d.img) return `<img class="imgbox" src="${d.img}" alt="">`;
@@ -829,9 +870,9 @@ function viewDash(){
   return `<div class="dash dash2">${kpis}
     <div class="d-cal cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {head:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {head:'qual'})}</div>
     <div class="d-top">
-      ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {head:'sched'})}
-      ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:3rem"></div>`, {head:'meet'})}
-      ${panel('5','Эрсдэл', (peek(dkey(), ()=>({})).risk ? `<div class="mtext risk">${esc(peek(dkey(), ()=>({})).risk)}</div>` : '') + risksHTML(true), {head:'risk'})}
+      ${panel('7','Хуваарь', topBody('sched'), {head:'sched', cls:'tp', right:topBtns('sched')})}
+      ${panel('3','Хурал', topBody('meet'), {head:'meet', cls:'tp', right:topBtns('meet')})}
+      ${panel('5','Эрсдэл', topBody('risk'), {head:'risk', cls:'tp', right:topBtns('risk')})}
     </div>
     <div class="d-feat">${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'full', more:'people', right:'<button class="more" data-sarch="1" title="Өмнөх 7 хоногуудын од">🗂</button>'})}</div>
     <div class="d-grid">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridBody(), {cls:'full', more:'grid', right: gridTools() + `<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
@@ -976,6 +1017,7 @@ function render(){
   const v = $('#view');
   const map = { dash:viewDash, prio:()=>viewCal('prio','1','Чухалчлах'), qual:()=>viewCal('qual','2','Чанар'), meet:viewMeet, grid:viewGrid, risk:viewRisk, people:viewPeople, sched:viewSched, map:viewMap, set:viewSet };
   v.innerHTML = (map[S.tab] || viewDash)();
+  if(S.zoom) renderZoom();
   // ink mounts
   const w = curWeek();
   const mm = $('#inkMeetMini'); if(mm) inks.push(new Ink(mm, () => curWeek().meeting.ink, false));
@@ -1408,7 +1450,7 @@ document.addEventListener('click', e => {
   if(d.close){ closeModal(); return; }
   if(d.shift){ if(S.shift !== d.shift){ S.shift = d.shift; localStorage.setItem('lif:shift', S.shift); history.replaceState(null, '', '#' + S.shift); S.gridDraw = false; render(); toast(S.shift === 'night' ? '☾ Шөнийн ээлжийн самбар' : '☀ Өдрийн ээлжийн самбар'); } return; }
   if(d.tab){ S.tab = d.tab; localStorage.setItem('lif:tab', S.tab); render(); $('#view').scrollTop = 0; return; }
-  if(!S.edit && (d.wladd||d.wlrm||d.photo||d.gdraw||d.gximp||d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
+  if(!S.edit && (d.tupl||d.tuplrm||d.wladd||d.wlrm||d.photo||d.gdraw||d.gximp||d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
   if(d.cal){ const m = curMonth(), o = m[d.cal] = m[d.cal]||{}; o[d.day] = ({'':'g', g:'r', r:''})[o[d.day]||'']; if(!o[d.day]) delete o[d.day]; commit(mkey()); return; }
   if(d.slot){ const [code, dy, r] = d.slot.split('|'); const day = dy === 'w' ? 'w' : +dy; if(longPressed){ longPressed = false; return; }
     const e2 = ((curWeek().grid[code]||{})[day]||[])[+r];
@@ -1435,6 +1477,11 @@ document.addEventListener('click', e => {
   if(d.gdraw){ S.gridDraw = !S.gridDraw; if(S.gridDraw){ S.pen.mode = 'pen'; if(!['#1d1d1b','#dc2626','#16a34a'].includes(S.pen.color)) S.pen.color = '#1d1d1b'; } render(); return; }
   if(d.gximp){ importWeekExcel(); return; }
   if(d.gxexp){ exportWeekExcel(); return; }
+  if(d.zoom){ openZoom(d.zoom); return; }
+  if(d.zclose){ S.zoom = null; renderZoom(); return; }
+  if(d.zs !== undefined){ S.zs = d.zs === '0' ? 1 : Math.max(1, Math.min(4, S.zs + (+d.zs) * 0.5)); renderZoom(); return; }
+  if(d.tupl){ pickImage(url => { if(d.tupl === 'meet'){ curWeek().meeting.img = url; commit(wkey()); } else { const key = d.tupl === 'sched' ? 'schedule' : 'riskimg'; getDoc(key, ()=>({})).img = url; commit(key); } toast('Зураг хадгаллаа'); }); return; }
+  if(d.tuplrm){ if(!confirm('Зургийг устгах уу?')) return; if(d.tuplrm === 'meet'){ curWeek().meeting.img = null; commit(wkey()); } else { const key = d.tuplrm === 'sched' ? 'schedule' : 'riskimg'; getDoc(key, ()=>({})).img = null; commit(key); } return; }
   if(d.pinfo){ pinInfo(d.pinfo); return; }
   if(d.placecancel){ S.placing = null; render(); return; }
   if(d.pmode){ S.pmode = d.pmode; render(); return; }
@@ -1474,6 +1521,7 @@ document.addEventListener('pointerdown', e => {
   if(S.edit && S.pen.mode === 'erase'){ const w = curWeek(); w.map.markers = w.map.markers.filter(m => m.id !== mk.dataset.mk); commit(wkey()); return; }
   pinInfo(mk.dataset.mk);
 }, true);
+document.addEventListener('click', e => { const z = e.target.closest('.tpimg'); if(z) openZoom(z.dataset.zk); });
 // mini map / mini ink → open tab
 document.addEventListener('click', e => {
   if(e.target.closest('#mapMini')){ S.tab='map'; localStorage.setItem('lif:tab','map'); render(); }
@@ -1563,7 +1611,7 @@ $('#restoreFile').onchange = e => {
     queuePush(); render(); toast('Сэргээлээ'); } catch(err){ toast('Буруу backup файл', true); } };
   rd.readAsText(f); e.target.value = '';
 };
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ if($('#modal').classList.contains('open')) closeModal(); else if(S.zoom){ S.zoom = null; renderZoom(); } } });
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if((h === 'day' || h === 'night') && h !== S.shift){ S.shift = h; localStorage.setItem('lif:shift', h); render(); } });
 document.addEventListener('pointerdown', e => { if(e.target.id === 'starpop') hideStarPop(); });
 // шөнө дунд өдөр солигдоход шинэчлэх
