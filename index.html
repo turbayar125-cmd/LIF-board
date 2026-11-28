@@ -641,7 +641,7 @@ const featDoc = () => peek('featured', () => ({ list:[] }));
 const starLog = () => peek(SK('stars'), () => ({ log:[] })).log || [];
 // Од: нэг хүнд нэг өдөрт нэг; тоо нь тухайн 7 хоногийнх, өмнөх 7 хоногийнх архивт үлдэнэ
 const starWeek = e => weekKey(parseYmd(e.date));
-function starInfo(name, wk){ wk = wk || weekKey(S.date); const k = normName(name), today = ymd(new Date()), days = new Set(); let td = false;
+function starInfo(name, wk){ wk = wk || weekKey(S.date); const k = normName(name), today = ymd(S.date), days = new Set(); let td = false;
   for(const e of starLog()) if(normName(e.name) === k){ if(e.date === today) td = true; if(starWeek(e) === wk) days.add(e.date); }
   return { n:days.size, today:td }; }
 function allPeople(){
@@ -893,7 +893,7 @@ function viewDash(){
 }
 // Энэ 7 хоногт од авсан хүмүүсийн жагсаалт (их одтой нь эхэнд)
 function topStarsHTML(){
-  const wk = weekKey(S.date), today = ymd(new Date()), per = {};
+  const wk = weekKey(S.date), today = ymd(S.date), per = {};
   for(const e of starLog()) if(starWeek(e) === wk){ const k = normName(e.name); (per[k] = per[k] || { name:e.name, days:new Set() }).days.add(e.date); }
   const rows = Object.values(per).sort((a,b) => b.days.size - a.days.size || a.name.localeCompare(b.name));
   if(!rows.length) return `<div class="empty" style="height:100%"><div><b>Энэ 7 хоногт од өгөөгүй</b>Онцлох ярилцлагын ★ дарж од өгнө</div></div>`;
@@ -1212,9 +1212,8 @@ function pickImage(cb, maxPx){
 /* ================= Од өгөх ================= */
 let starTimer = null;
 function addStar(name){
-  if(weekKey(S.date) !== weekKey(new Date())){ toast('Од зөвхөн энэ 7 хоногт өгнө — “Өнөөдөр” дээр дарна уу', true); return; }
   const sd = getDoc(SK('stars'), ()=>({log:[]})); sd.log = sd.log || [];
-  const today = ymd(new Date()), k = normName(name);
+  const today = ymd(S.date), k = normName(name); // сонгосон өдрийн од
   // өмнө нь нэг өдөрт давхар өгсөн бол цэвэрлэнэ
   const seen = new Set(), before = sd.log.length;
   sd.log = sd.log.filter(x => { const kk = normName(x.name) + '|' + x.date; if(seen.has(kk)) return false; seen.add(kk); return true; });
@@ -1223,11 +1222,11 @@ function addStar(name){
   if(!already || sd.log.length !== before) commit(SK('stars'));
   const f = (featDoc().list||[]).find(x => normName(x.name) === normName(name));
   const m = personByName(name) || { name };
-  showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || photoOf(name) || photoOf(m.name) || '' }, starInfo(name, weekKey(new Date())).n, e.id, already);
+  showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || photoOf(name) || photoOf(m.name) || '' }, starInfo(name, weekKey(S.date)).n, e.id, already);
 }
 function showStarPop(p, n, id, already){
   let el = $('#starpop'); if(!el){ el = document.createElement('div'); el.id = 'starpop'; document.body.appendChild(el); }
-  const d = new Date();
+  const d = S.date;
   el.innerHTML = `<div class="sp-wrap">
     <div class="sp-photo">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : `<span>${esc(initials(p.name).toUpperCase())}</span>`}</div>
     <div class="sp-spin"><span>★</span></div>
@@ -1235,7 +1234,7 @@ function showStarPop(p, n, id, already){
     ${p.role || p.dept ? `<div class="sp-role">${esc(p.role || p.dept)}</div>` : ''}
     <div class="sp-cap">Тухайн өдрийн шилдэг ярилцлага · ${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}</div>
     <div class="sp-cnt">Энэ 7 хоногт <b>★ ${n}</b></div>
-    ${already ? '<div class="sp-cap" style="color:#fde68a">Өнөөдөр аль хэдийн од авсан — нэг өдөрт нэг од</div>' : ''}
+    ${already ? '<div class="sp-cap" style="color:#fde68a">Энэ өдөр аль хэдийн од авсан — нэг өдөрт нэг од</div>' : ''}
     <button class="sp-undo" data-unstar="${esc(id)}">${already ? 'Өнөөдрийн одыг цуцлах' : 'Буцаах'}</button>
   </div><div class="sp-bar"></div>`;
   el.className = 'show';
