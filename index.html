@@ -30,8 +30,8 @@ input,select,textarea{font:inherit;color:inherit}
 .brand img{height:2.4rem}
 .brand b{font-size:1.45rem;letter-spacing:.04em;color:var(--y);white-space:nowrap}
 .brand small{display:block;font-size:.8rem;color:#bdb8a8;letter-spacing:.02em;white-space:nowrap}
-.tabs{display:flex;gap:.25rem;margin-left:1rem;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
-.tabs button{padding:.55rem .9rem;border-radius:.5rem;font-size:1.02rem;color:#e9e5d8;white-space:nowrap;font-weight:600}
+.tabs{display:flex;gap:.2rem;margin-left:.6rem;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.tabs button{padding:.5rem .6rem;border-radius:.5rem;font-size:.97rem;color:#e9e5d8;white-space:nowrap;font-weight:600}
 .tabs button .n{display:inline-grid;place-items:center;width:1.5rem;height:1.5rem;border-radius:50%;background:#3b3a35;color:var(--y);font-size:.85rem;margin-right:.4rem}
 .tabs button.on{background:var(--y);color:var(--ink)}
 .tabs button.on .n{background:var(--ink)}
@@ -209,6 +209,29 @@ body:not(.view) .ed{} body.view .ed{display:none}
 .arch-h .sp{flex:1}
 .arch-l{display:flex;flex-wrap:wrap;gap:.45rem;padding:.6rem .8rem}
 .arch-p{display:inline-flex;align-items:center;gap:.4rem;background:#fff;border:1px solid var(--line);border-radius:2rem;padding:.2rem .3rem .2rem .2rem;font-size:.9rem}
+/* ээлж */
+.shift{display:flex;background:#34332e;border-radius:.6rem;padding:.2rem;gap:.2rem;flex:none;margin-left:.8rem}
+.shift button{padding:.45rem .8rem;border-radius:.45rem;font-weight:800;font-size:.95rem;color:#d6d2c4;white-space:nowrap}
+.shift button.on{background:var(--y);color:var(--ink)}
+.shtag{display:inline-block;font-size:.85rem;font-weight:800;background:var(--ink);color:var(--y);border-radius:.4rem;padding:.15rem .5rem;margin-right:.5rem;vertical-align:.15rem}
+body.display .shift{display:none}
+/* шөнийн ээлж — цэнхэр */
+body.night{--y:#5bb8e6;--y2:#a9dcf5;--y3:#e3f3fc;--bg:#e8f1f8;--line:#cfe2ef;--line2:#b3cfe3;--ink:#0b2340;--ink2:#1c3a5c;--mut:#5b7186}
+body.night .top{background:#0b2340}
+body.night .tabs button{color:#d5e6f3} body.night .tabs button .n{background:#1c3a5c}
+body.night .tbtn,body.night .shift{background:#1c3a5c} body.night .tbtn.on{background:var(--y);color:var(--ink)} body.night .shift button{color:#cfe3f2}
+body.night .brand small{color:#9fbcd4}
+body.night .eg2 th,body.night .eg th{background:#f0f7fc} body.night .eg2 th.today,body.night .eg th.today{background:var(--y)}
+body.night .eg2 tr.band td{background:#dcedf8}
+body.night .eg2 td.today,body.night .eg td.today{background:#eaf6fd}
+body.night .eg td.tl{background:#f4f9fd}
+body.night .cal button{background:#e6f0f7} body.night .cal button.g{background:#22a04b} body.night .cal button.r{background:var(--bad)}
+body.night .seg{background:#d5e6f2} body.night .pinpad button{background:#e3eef6}
+body.night .empty{background:#f4f9fd}
+body.night .mtext{background:#eef7fd}
+body.night .arch-h{background:#f0f7fc}
+body.night .inkwrap{background:repeating-linear-gradient(#fff 0 2.3rem,#dbe9f3 2.3rem calc(2.3rem + 1px))}
+body.night .slotb.blank .plus{color:#a9c4d8}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -316,9 +339,10 @@ code{background:#f4f0e3;padding:.1rem .35rem;border-radius:.3rem;font-size:.9em}
 
 <header class="top">
   <div class="brand"><img src="logo-mark.png" alt=""><div><b id="brandT">LEADERSHIP IN THE FIELD</b><small id="brandS">Engagements board · Premium</small></div></div>
+  <div class="shift" id="shiftSw"><button data-shift="day" title="Өдрийн ээлж">☀ Өдөр</button><button data-shift="night" title="Шөнийн ээлж">☾ Шөнө</button></div>
   <nav class="tabs" id="tabs"></nav>
   <button class="tbtn" id="btnEdit" title="Засах / харах горим"></button>
-  <button class="tbtn" id="btnFull" title="Бүтэн дэлгэц (MAXHUB)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="fullT">Display Mode</span></button>
+  <button class="tbtn" id="btnFull" title="Бүтэн дэлгэц (MAXHUB)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span id="fullT">Display</span></button>
 </header>
 <div class="sub">
   <div class="datenav">
@@ -384,7 +408,8 @@ const defMonth = () => ({ prio:{}, qual:{} });
 /* ================= state ================= */
 const S = {
   date: new Date(), tab: localStorage.getItem('lif:tab') || 'dash',
-  edit: localStorage.getItem('lif:edit') === '1', display: false, gridDraw: false,
+  edit: localStorage.getItem('lif:edit') === '1', display: false,
+  shift: location.hash === '#night' ? 'night' : location.hash === '#day' ? 'day' : (localStorage.getItem('lif:shift') || ((h => h >= 8 && h < 20 ? 'day' : 'night'))(new Date().getHours())), gridDraw: false,
   user: null, isAdmin: false, cloud: false,
   docs: {},            // key -> {data, t}
   people: [],          // [{id,name,role,dept,photo}]
@@ -423,17 +448,19 @@ function weekStartDate(d){ const ws = settings().weekStart ?? 6; const diff = (d
 function weekKey(d){ const s = weekStartDate(d); const [y,w] = isoWeek(s); return `${y}-W${pad(w)}`; }
 function weekDays(d){ const s = weekStartDate(d); return [...Array(7)].map((_,i)=>addDays(s,i)); }
 const monthKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
-const curWeek = () => getDoc('week:'+weekKey(S.date), defWeek);
-const curMonth = () => getDoc('month:'+monthKey(S.date), defMonth);
-const wkey = () => 'week:'+weekKey(S.date);
+// Ээлж: өдөр = үндсэн түлхүүр, шөнө = 'n:' угтвартай тусдаа мэдээлэл
+const SK = k => (S.shift === 'night' ? 'n:' : '') + k;
+const curWeek = () => getDoc(SK('week:'+weekKey(S.date)), defWeek);
+const curMonth = () => getDoc(SK('month:'+monthKey(S.date)), defMonth);
+const wkey = () => SK('week:'+weekKey(S.date));
 // Чиглүүлэгч — долоо хоног бүр тусдаа; хоосон бол өмнөх долоо хоногийнхыг авна
 function leadersFor(){
   const w = curWeek(); if(Array.isArray(w.leaders)) return w.leaders;
-  const cur = wkey(); const prev = Object.keys(S.docs).filter(k => k.startsWith('week:') && k < cur && Array.isArray(S.docs[k].data?.leaders)).sort().pop();
+  const cur = wkey(); const prev = Object.keys(S.docs).filter(k => k.startsWith(SK('week:')) && k < cur && Array.isArray(S.docs[k].data?.leaders)).sort().pop();
   return prev ? S.docs[prev].data.leaders.slice() : settings().leaders.slice();
 }
 function setLeaders(list){ curWeek().leaders = list; commit(wkey()); }
-const mkey = () => 'month:'+monthKey(S.date);
+const mkey = () => SK('month:'+monthKey(S.date));
 
 /* ================= cloud sync ================= */
 let pushTimer = null;
@@ -511,7 +538,7 @@ async function startCloud(){
 // fallback poll (realtime унтарсан тохиолдолд)
 setInterval(async () => {
   if(!S.cloud || S.dirty.size || S.drawing) return;
-  const keys = ['settings', wkey(), mkey(), 'risks', 'schedule', 'mapbg', 'featured', 'stars'];
+  const keys = ['settings', wkey(), mkey(), SK('risks'), 'schedule', 'mapbg', 'featured', SK('stars'), dkey()];
   const { data } = await sb.from('lif_docs').select('key,data,client_t').in('key', keys);
   let ch = false;
   for(const r of data||[]){ const loc = S.docs[r.key]; if(!loc || (r.client_t||0) > (loc.t||0)){ S.docs[r.key] = {data:r.data, t:r.client_t||0}; saveLocal(r.key); ch = true; } }
@@ -529,7 +556,7 @@ function matchPerson(n, list){
 }
 const featDoc = () => peek('featured', () => ({ list:[] }));
 // Од (онцлох ярилцлага хийсэн) — бүх цаг үеийн бүртгэл
-const starLog = () => peek('stars', () => ({ log:[] })).log || [];
+const starLog = () => peek(SK('stars'), () => ({ log:[] })).log || [];
 // Од: нэг хүнд нэг өдөрт нэг; тоо нь тухайн 7 хоногийнх, өмнөх 7 хоногийнх архивт үлдэнэ
 const starWeek = e => weekKey(parseYmd(e.date));
 function starInfo(name, wk){ wk = wk || weekKey(S.date); const k = normName(name), today = ymd(new Date()), days = new Set(); let td = false;
@@ -577,12 +604,16 @@ const TABS = [
 function renderChrome(){
   $('#tabs').innerHTML = TABS.map(([id,n,l]) => `<button data-tab="${id}" class="${S.tab===id?'on':''}">${n?`<span class="n">${n}</span>`:''}${l}</button>`).join('');
   $('#btnEdit').className = 'tbtn' + (S.edit ? ' on' : '');
-  $('#btnEdit').innerHTML = S.edit ? '✎ Засах горим' : '👁 Харах горим';
+  $('#btnEdit').innerHTML = S.edit ? '✎ Засах' : '👁 Харах';
   $('#brandS').textContent = (settings().title || 'Engagements board') + ' · Premium';
   $('#dateIn').value = ymd(S.date);
   const ds = weekDays(S.date);
   $('#wkLabel').innerHTML = `${weekKey(S.date)}<small>${ds[0].getMonth()+1}/${ds[0].getDate()} – ${ds[6].getMonth()+1}/${ds[6].getDate()} · ${DOWL[S.date.getDay()]}, ${S.date.getFullYear()}.${pad(S.date.getMonth()+1)}.${pad(S.date.getDate())}</small>`;
   document.body.classList.toggle('view', !S.edit);
+  document.body.classList.toggle('night', S.shift === 'night');
+  document.querySelectorAll('#shiftSw [data-shift]').forEach(b => b.classList.toggle('on', b.dataset.shift === S.shift));
+  $('#wkLabel').insertAdjacentHTML('afterbegin', `<span class="shtag">${S.shift === 'night' ? '☾ Шөнө' : '☀ Өдөр'}</span>`);
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', S.shift === 'night' ? '#0b2340' : '#1d1d1b');
 }
 function renderLoginBtn(){
   $('#btnLogin').textContent = S.user ? '⎋ ' + (S.user.email||'').split('@')[0] : '🔑 Нэвтрэх';
@@ -665,7 +696,7 @@ function meetingPeopleHTML(big){
 }
 
 function risksHTML(compact){
-  const rs = (peek('risks', ()=>({list:[]})).list || []);
+  const rs = (peek(SK('risks'), ()=>({list:[]})).list || []);
   const order = {crit:0, high:1, med:2, low:3};
   const list = rs.filter(r => compact ? !r.closed : true).sort((a,b) => (a.closed-b.closed) || (order[a.level]-order[b.level]));
   const LV = {crit:'КРИТИК', high:'ӨНДӨР', med:'ДУНД', low:'БАГА'};
@@ -688,7 +719,7 @@ function mapHTML(mini){
 /* ================= views ================= */
 function viewDash(){
   const w = curWeek(), st = weekStats(w), m = curMonth(), p = calCount(m.prio), q = calCount(m.qual);
-  const crit = (peek('risks', ()=>({list:[]})).list||[]).filter(r => !r.closed && r.level==='crit').length;
+  const crit = (peek(SK('risks'), ()=>({list:[]})).list||[]).filter(r => !r.closed && r.level==='crit').length;
   const ldrs = leadersFor();
   const kpis = `<div class="kpis">
     <div class="kpi"><div class="v"><span class="g">${p.g}</span>/<span class="r">${p.r}</span></div><div class="l">1 Чухалчлах · G/R (сар)</div></div>
@@ -751,7 +782,7 @@ function inkTools(markers){
     <button class="btn danger" data-clear="${markers?'map':'meet'}">Бүгдийг арилгах</button>
   </div>`;
 }
-const dkey = () => 'day:' + ymd(S.date);
+const dkey = () => SK('day:' + ymd(S.date));
 function viewRisk(){
   const dd = peek(dkey(), () => ({}));
   return `<div class="two" style="grid-template-columns:2fr 1fr">${panel('5','Critical / Fatality Risk', `<div class="fld"><label>Өдрийн мэдээлэл — ${S.date.getFullYear()}.${pad(S.date.getMonth()+1)}.${pad(S.date.getDate())} (${DOWL[S.date.getDay()]})</label><textarea class="inp" rows="4" data-dtext="risk" ${S.edit?'':'readonly'} placeholder="Өнөөдрийн критик эрсдэл, анхааруулга…">${esc(dd.risk||'')}</textarea></div><div class="grp">Эрсдэлийн бүртгэл</div>` + (S.edit ? `<form class="bar" id="riskForm">
@@ -998,14 +1029,14 @@ function pickImage(cb, maxPx){
 let starTimer = null;
 function addStar(name){
   if(weekKey(S.date) !== weekKey(new Date())){ toast('Од зөвхөн энэ 7 хоногт өгнө — “Өнөөдөр” дээр дарна уу', true); return; }
-  const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log || [];
+  const sd = getDoc(SK('stars'), ()=>({log:[]})); sd.log = sd.log || [];
   const today = ymd(new Date()), k = normName(name);
   // өмнө нь нэг өдөрт давхар өгсөн бол цэвэрлэнэ
   const seen = new Set(), before = sd.log.length;
   sd.log = sd.log.filter(x => { const kk = normName(x.name) + '|' + x.date; if(seen.has(kk)) return false; seen.add(kk); return true; });
   let e = sd.log.find(x => normName(x.name) === k && x.date === today), already = !!e;
   if(!e){ e = { id:uid(), name, date:today, t:Date.now(), by:S.user?.email || '' }; sd.log.push(e); }
-  if(!already || sd.log.length !== before) commit('stars');
+  if(!already || sd.log.length !== before) commit(SK('stars'));
   const f = (featDoc().list||[]).find(x => normName(x.name) === normName(name));
   const m = personByName(name) || { name };
   showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || photoOf(name) || photoOf(m.name) || '' }, starInfo(name, weekKey(new Date())).n, e.id, already);
@@ -1241,6 +1272,7 @@ document.addEventListener('click', e => {
   const t = e.target.closest('button,[data-tab]'); if(!t) return;
   const d = t.dataset;
   if(d.close){ closeModal(); return; }
+  if(d.shift){ if(S.shift !== d.shift){ S.shift = d.shift; localStorage.setItem('lif:shift', S.shift); history.replaceState(null, '', '#' + S.shift); S.gridDraw = false; render(); toast(S.shift === 'night' ? '☾ Шөнийн ээлжийн самбар' : '☀ Өдрийн ээлжийн самбар'); } return; }
   if(d.tab){ S.tab = d.tab; localStorage.setItem('lif:tab', S.tab); render(); $('#view').scrollTop = 0; return; }
   if(!S.edit && (d.wladd||d.wlrm||d.photo||d.gdraw||d.gximp||d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
   if(d.cal){ const m = curMonth(), o = m[d.cal] = m[d.cal]||{}; o[d.day] = ({'':'g', g:'r', r:''})[o[d.day]||'']; if(!o[d.day]) delete o[d.day]; commit(mkey()); return; }
@@ -1257,7 +1289,7 @@ document.addEventListener('click', e => {
   if(d.star){ addStar(d.star); return; }
   if(d.sarch){ starArchive(); return; }
   if(d.sweek){ S.date = weekStartDate(parseYmd(d.sweek)); closeModal(); render(); return; }
-  if(d.unstar){ const sd = getDoc('stars', ()=>({log:[]})); sd.log = sd.log.filter(x => x.id !== d.unstar); hideStarPop(); commit('stars'); toast('Одыг буцаалаа'); return; }
+  if(d.unstar){ const sd = getDoc(SK('stars'), ()=>({log:[]})); sd.log = sd.log.filter(x => x.id !== d.unstar); hideStarPop(); commit(SK('stars')); toast('Одыг буцаалаа'); return; }
   if(d.madd){ pickPerson({ title:'Хурал хийх хүн нэмэх', multi:true, onPick:n => { const m = curWeek().meeting; if(!m.people.includes(n)) m.people.push(n); commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
   if(d.mrm){ const m = curWeek().meeting; m.people = m.people.filter(x=>x!==d.mrm); commit(wkey()); return; }
   if(d.wladd){ pickPerson({ title:'Энэ долоо хоногийн чиглүүлэгч', multi:true, onPick:n => { const l = leadersFor(); if(!l.includes(n)) l.push(n); curWeek().leaders = l; commit(wkey(), {noRender:true}); S.needRender = true; } }); return; }
@@ -1288,8 +1320,8 @@ document.addEventListener('click', e => {
   if(d.mk !== undefined){}
   if(d.upimg){ pickImage(url => { getDoc(d.upimg, ()=>({})).img = url; commit(d.upimg); toast('Зураг хадгаллаа'); }); return; }
   if(d.rmimg){ if(!confirm('Зургийг устгах уу?')) return; getDoc(d.rmimg, ()=>({})).img = null; commit(d.rmimg); return; }
-  if(d.rclose){ const r = getDoc('risks', ()=>({list:[]})).list.find(x=>x.id===d.rclose); r.closed = !r.closed; commit('risks'); return; }
-  if(d.rdel){ if(!confirm('Эрсдэлийг устгах уу?')) return; const rs = getDoc('risks', ()=>({list:[]})); rs.list = rs.list.filter(x=>x.id!==d.rdel); commit('risks'); return; }
+  if(d.rclose){ const r = getDoc(SK('risks'), ()=>({list:[]})).list.find(x=>x.id===d.rclose); r.closed = !r.closed; commit(SK('risks')); return; }
+  if(d.rdel){ if(!confirm('Эрсдэлийг устгах уу?')) return; const rs = getDoc(SK('risks'), ()=>({list:[]})); rs.list = rs.list.filter(x=>x.id!==d.rdel); commit(SK('risks')); return; }
   if(d.ladd){ pickPerson({ title:'Чиглүүлэгч нэмэх', multi:true, onPick:n => { const s = settings(); if(!s.leaders.includes(n)) s.leaders.push(n); commit('settings', {noRender:true}); S.needRender = true; } }); return; }
   if(d.lrm){ const s = settings(); s.leaders = s.leaders.filter(x=>x!==d.lrm); commit('settings'); return; }
   if(d.tdel !== undefined){ if(!confirm('Энэ төрлийг устгах уу? (Бичсэн мэдээлэл хадгалагдсан хэвээр үлдэнэ)')) return; settings().types.splice(+d.tdel,1); commit('settings'); return; }
@@ -1322,8 +1354,8 @@ document.addEventListener('pointerdown', e => {
 
 
 document.addEventListener('submit', e => {
-  if(e.target.id === 'riskForm'){ e.preventDefault(); const f = e.target; const rs = getDoc('risks', ()=>({list:[]}));
-    rs.list.unshift({ id:uid(), text:f.text.value.trim(), level:f.level.value, area:f.area.value.trim(), owner:f.owner.value.trim(), date:ymd(new Date()), closed:false }); commit('risks'); }
+  if(e.target.id === 'riskForm'){ e.preventDefault(); const f = e.target; const rs = getDoc(SK('risks'), ()=>({list:[]}));
+    rs.list.unshift({ id:uid(), text:f.text.value.trim(), level:f.level.value, area:f.area.value.trim(), owner:f.owner.value.trim(), date:ymd(new Date()), closed:false }); commit(SK('risks')); }
   if(e.target.id === 'exForm'){ e.preventDefault(); const f = e.target; settings().extraPeople.push({ id:'x'+uid(), name:f.name.value.trim(), role:f.role.value.trim(), dept:f.dept.value.trim() }); commit('settings'); }
 });
 document.addEventListener('change', e => {
@@ -1366,7 +1398,7 @@ function pinModal(pin){
 }
 function setDisplay(on){
   S.display = on; document.body.classList.toggle('display', on);
-  $('#fullT').textContent = on ? 'Гарах' : 'Display Mode';
+  $('#fullT').textContent = on ? 'Гарах' : 'Display';
   const de = document.documentElement;
   if(on){ S.edit = false; S.gridDraw = false; localStorage.setItem('lif:edit','0'); S.tab = 'dash'; try{ (de.requestFullscreen||de.webkitRequestFullscreen)?.call(de)?.catch?.(()=>{}); }catch(e){} }
   else if(document.fullscreenElement){ document.exitFullscreen?.().catch?.(()=>{}); }
@@ -1395,6 +1427,7 @@ $('#restoreFile').onchange = e => {
   rd.readAsText(f); e.target.value = '';
 };
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if((h === 'day' || h === 'night') && h !== S.shift){ S.shift = h; localStorage.setItem('lif:shift', h); render(); } });
 document.addEventListener('pointerdown', e => { if(e.target.id === 'starpop') hideStarPop(); });
 // шөнө дунд өдөр солигдоход шинэчлэх
 let lastDay = ymd(new Date());
