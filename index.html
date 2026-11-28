@@ -852,6 +852,13 @@ function viewMeet(){
       ${S.edit?`<div class="bar" style="margin-top:.5rem"><button class="btn" data-wimg="meet">Зураг оруулах</button>${m.img?'<button class="btn danger" data-wimgrm="meet">Устгах</button>':''}</div>`:''}`, {cls:'full'})}
     ${panel('', 'Гараар бичих хэсэг', inkTools() + `<div class="inkwrap" id="inkMeet" style="height:calc(100% - 3.6rem)"></div>`, {cls:'full'})}</div>`;
 }
+// Field Map-д pin тавих төрлүүд (Coach / Trainee хасагдсан)
+const pinTypes = () => typesFor().filter(t => t.code !== 'CP' && t.code !== 'TP');
+function mapTools(){
+  if(!S.edit) return `<div class="note" style="margin-bottom:.5rem">Pin тавихын тулд “✎ Засах” горимд шилжинэ.</div>`;
+  const pt = pinTypes(); if(!pt.some(t => t.code === S.pen.marker)) S.pen.marker = pt[0]?.code;
+  return `<div class="tools" style="margin-bottom:.6rem">${pt.map(t => `<button class="tool ${S.pen.marker===t.code?'sel':''}" style="background:${esc(t.color)}" data-marker="${esc(t.code)}">${esc(t.code)}</button>`).join('')}<span class="note" style="margin-left:.6rem">Төрлөө сонгоод зураг дээр дарна</span></div>`;
+}
 function inkTools(markers){
   const pens = ['#1d1d1b','#dc2626','#16a34a','#2563eb','#ea580c'];
   const types = typesFor();
@@ -896,11 +903,11 @@ function viewSched(){
 }
 function viewMap(){
   const w = curWeek(), types = typesFor();
-  const counts = types.map(t => [t, (w.map.markers||[]).filter(m=>m.c===t.code).length]);
+  const counts = pinTypes().map(t => [t, (w.map.markers||[]).filter(m=>m.c===t.code).length]);
   const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
   const pins = (w.map.markers||[]).filter(m => m.name).slice().sort((a,b) => (b.date||'').localeCompare(a.date||''));
   const banner = S.placing ? `<div class="placing">📍 <b>${esc(S.placing.name)}</b> — ярилцлага хийсэн байршил дээр нь дарна уу <button class="btn" data-placecancel="1">Болих</button></div>` : '';
-  return `<div class="two" style="grid-template-columns:1fr 19rem">${panel('8','Field Map — ярилцлага хийсэн байршил', banner + inkTools(true) + `<div class="mapfit" style="height:calc(100% - ${S.placing?'7.4rem':'3.8rem'})">${mapHTML(false)}</div>`, {cls:'full'})}
+  return `<div class="two" style="grid-template-columns:1fr 19rem">${panel('8','Field Map — ярилцлага хийсэн байршил', banner + mapTools() + `<div class="mapfit" style="height:calc(100% - ${S.placing?'7.4rem':'3.8rem'})">${mapHTML(false)}</div>`, {cls:'full'})}
     ${panel('', `📍 Энэ 7 хоногт (${pins.length})`, counts.map(([t,n]) => `<span class="tag" style="background:${esc(t.color)};font-size:.85rem;margin:0 .25rem .3rem 0;display:inline-block">${esc(t.code)} ${n}</span>`).join('') +
       (pins.length ? `<div class="plist" style="margin-top:.4rem">${pins.map(m => `<button class="prow pinrow" data-pinfo="${m.id}">${avatar(personByName(m.name) || {name:m.name}, 'sm')}<div class="i"><b>${esc(m.name)}</b><small>${esc(m.c)} · ${esc(m.date||'')}</small></div><span class="dotc" style="background:${col(m.c)}"></span></button>`).join('')}</div>` : `<p class="note">${S.edit?'1) Дээрх өнгөт товчноос төрлөө (SI, CRM…) сонгоно. 2) Зураг дээр ярилцлага хийсэн газарт дарна. 3) Хүнээ сонгоход анивчдаг pin тавигдана.':'Pin алга'}</p>`) +
       `${S.edit?`<button class="btn" data-upimg="mapbg" style="width:100%;justify-content:center;margin-top:.6rem">Талбайн зураг солих</button>`:''}`, {cls:'full'})}</div>`;
@@ -1009,9 +1016,7 @@ class Ink{
     if(!S.edit) return;
     if(e.target.closest('.mk,.pin')) return;
     const p = this.pt(e);
-    if(this.kind === 'map' && S.pen.mode === 'marker'){
-      placePin(p[0], p[1]); return;
-    }
+    if(this.kind === 'map'){ placePin(p[0], p[1]); return; }
     if(S.pen.mode === 'erase'){ this.eraseAt(p); return; }
     this.el.setPointerCapture?.(e.pointerId);
     const width = (e.pointerType === 'pen' ? 3 : 4) / Math.max(400, this.w) * (this.kind==='map' ? 1 : 1.2);
@@ -1097,7 +1102,7 @@ function slotMenu(code, day, r){
 function placePin(x, y){
   const types = typesFor();
   if(S.placing){ const pl = S.placing; S.placing = null; curWeek().map.markers.push({ id:uid(), x, y, c:pl.code, name:pl.name, date:pl.date }); commit(wkey()); toast(`📍 ${pl.name} — байршил тэмдэглэгдлээ`); return; }
-  const t = types.find(x => x.code === S.pen.marker) || types[0];
+  const pt = pinTypes(), t = pt.find(x => x.code === S.pen.marker) || pt[0];
   const w = curWeek(), g = w.grid[t.code] || {}, todayI = weekDays(S.date).findIndex(d => ymd(d) === ymd(new Date()));
   const sug = [...new Set([...(todayI >= 0 ? (g[todayI]||[]) : []), ...Object.values(g).flat()].filter(e => e && e.name).map(e => e.name))];
   pickPerson({ title:`📍 ${t?.name || ''} — хэн ярилцлага хийсэн бэ?`, suggest:sug, suggestTitle:`4 Мэдээлэл — ${t?.code} (энэ 7 хоног)`, onPick:name => { curWeek().map.markers.push({ id:uid(), x, y, c:t.code, name, date:ymd(new Date()) }); commit(wkey(), {noRender:true}); S.needRender = true; toast(`📍 ${name}`); } });
