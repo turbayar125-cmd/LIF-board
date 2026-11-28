@@ -276,6 +276,14 @@ body.night .slotb.blank .plus{color:#a9c4d8}
 #zoomov .zimg img{display:block;height:auto;max-width:none}
 #zoomov .zimg.fit{overflow:hidden;align-items:stretch}
 #zoomov .zimg.fit img{width:100%;height:100%;object-fit:contain}
+.safep .pb{display:flex;flex-direction:column;padding:.4rem;overflow:hidden}
+.safewrap{flex:1;min-height:0;overflow:hidden;display:flex;align-items:flex-start;justify-content:center}
+.safet{border-collapse:collapse;width:100%;height:100%;font-size:18px;line-height:1.2;background:#fff}
+.safet td{border:1px solid var(--line2);padding:.25em .4em;text-align:center;vertical-align:middle;font-weight:600}
+.safet td.h{background:var(--y3);font-weight:800}
+.safet td.num{font-weight:900;font-variant-numeric:tabular-nums}
+.safesrc{flex:none;font-size:.7rem;color:var(--mut);text-align:right;margin-top:.2rem}
+#zoomov .zside .safewrap{height:100%}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -796,10 +804,11 @@ function risksHTML(compact){
 }
 
 // Дээд 3 самбар (Хуваарь / Хурал / Эрсдэл): зураг оруулах + бүтэн дэлгэцээр томруулах
-const TOPS = { sched:{ n:'7', t:'Хуваарь' }, meet:{ n:'3', t:'Хурал' }, risk:{ n:'5', t:'Эрсдэл' } };
-const topImg = k => k === 'sched' ? peek('schedule', ()=>({})).img : k === 'meet' ? curWeek().meeting.img : peek('riskimg', ()=>({})).img;
+const TOPS = { sched:{ n:'7', t:'Хуваарь' }, meet:{ n:'3', t:'Хурал' }, risk:{ n:'5', t:'Эрсдэл' }, safe:{ n:'🛡', t:'Safeday' } };
+const topImg = k => k === 'safe' ? null : k === 'sched' ? peek('schedule', ()=>({})).img : k === 'meet' ? curWeek().meeting.img : peek('riskimg', ()=>({})).img;
 function topBtns(k){ return (S.edit ? `<button class="more" data-tupl="${k}" title="Зураг оруулах">📷</button>` : '') + `<button class="more" data-zoom="${k}" title="Томруулах">⛶</button>`; }
 function topBody(k, big){
+  if(k === 'safe') return safeHTML(big);
   const img = topImg(k), im = img ? `<img class="imgbox tpimg" data-zk="${k}" src="${img}" alt="">` : '';
   if(k === 'sched') return im || `<div class="empty"><div><b>Зураг оруулаагүй</b>${S.edit?'📷 дарж хуваарийн зургаа оруулна':''}</div></div>`;
   if(k === 'meet'){ const m = curWeek().meeting;
@@ -808,7 +817,7 @@ function topBody(k, big){
   const body = (dt ? `<div class="mtext risk" ${big?'style="max-height:none;font-size:1.3rem"':''}>${esc(dt)}</div>` : '') + (open || big ? (risksHTML(!big) || '') : '');
   return body + im || `<div class="empty"><div><b>Нээлттэй эрсдэл алга</b>${S.edit?'📷 дарж зураг оруулна':''}</div></div>`;
 }
-function openZoom(k){ S.zoom = k; S.zs = 1; renderZoom(); }
+function openZoom(k){ S.zoom = k; S.zs = 1; renderZoom(); requestAnimationFrame(fitSafe); }
 function renderZoom(){
   let el = $('#zoomov');
   if(!S.zoom){ if(el) el.remove(); return; }
@@ -816,7 +825,8 @@ function renderZoom(){
   const k = S.zoom, T = TOPS[k], img = topImg(k);
   el.innerHTML = `<div class="zh"><h2><span class="n">${T.n}</span>${T.t}</h2><span class="sp"></span>
     ${img ? `<button class="btn" data-zs="-1">−</button><span class="zpct">${Math.round(S.zs*100)}%</span><button class="btn" data-zs="1">+</button><button class="btn" data-zs="0">⟲</button>` : ''}
-    ${S.edit ? `<button class="btn" data-tupl="${k}">📷 Зураг ${img?'солих':'оруулах'}</button>${img?`<button class="btn danger" data-tuplrm="${k}">Зураг устгах</button>`:''}` : ''}
+    ${S.edit && k === 'safe' ? `<button class="btn y" data-safeimp="1">⬆ Excel оруулах</button>` : ''}
+    ${S.edit && k !== 'safe' ? `<button class="btn" data-tupl="${k}">📷 Зураг ${img?'солих':'оруулах'}</button>${img?`<button class="btn danger" data-tuplrm="${k}">Зураг устгах</button>`:''}` : ''}
     <button class="btn pri" data-zclose="1">✕ Жижигрүүлэх</button></div>
     <div class="zb ${img?'hasimg':''}">${k === 'sched' ? '' : `<div class="zside">${topBody(k, true).replace(/<img class="imgbox tpimg"[^>]*>/, '')}</div>`}
       ${img ? `<div class="zimg ${S.zs===1?'fit':''}"><img src="${img}" alt="" style="${S.zs===1?'':`width:${S.zs*100}%`}"></div>` : (k === 'sched' ? '<div class="empty"><div><b>Зураг оруулаагүй</b></div></div>' : '')}</div>`;
@@ -887,9 +897,61 @@ function viewDash(){
     <div class="d-grid">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridBody(), {cls:'full', more:'grid', right: gridTools() + `<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
     <div class="d-map">
       ${panel('8','Field Map', (mbg ? `<div class="mapblur" style="background-image:url('${mbg}')"></div>` : '') + `<div class="mapfit">${mapHTML(true)}</div>`, {cls:'mapdash', more:'map'})}
-      ${panel('🏆','Энэ 7 хоногийн шилдгүүд', topStarsHTML(), {cls:'grow', more:'people'})}
+      ${panel('🛡','Safeday', safeHTML(), {cls:'grow safep', right:(S.edit ? '<button class="more" data-safeimp="1" title="Excel хүснэгт оруулах">⬆ Excel</button>' : '') + '<button class="more" data-zoom="safe" title="Томруулах">⛶</button>'})}
     </div>
   </div>`;
+}
+// 🛡 Safeday — Excel хүснэгтийг тэр чигээр нь (нэгтгэсэн нүдтэй) харуулна
+const safeDoc = () => peek(SK('safeday'), () => ({}));
+function safeHTML(big){
+  const d = safeDoc();
+  if(!d.rows || !d.rows.length) return `<div class="empty" style="height:100%"><div><b>Safeday хүснэгт оруулаагүй</b>${S.edit ? 'Excel файлаа “⬆ Excel” товчоор оруулна' : ''}</div></div>`;
+  const R = d.rows.length, C = Math.max(...d.rows.map(r => r.length)), skip = new Set(), span = {};
+  for(const m of d.merges || []){ span[m.s.r+','+m.s.c] = [m.e.r-m.s.r+1, m.e.c-m.s.c+1]; for(let r=m.s.r; r<=m.e.r; r++) for(let c=m.s.c; c<=m.e.c; c++) if(r!==m.s.r || c!==m.s.c) skip.add(r+','+c); }
+  let h = `<div class="safewrap${big?' big':''}"><table class="safet">`;
+  for(let r=0; r<R; r++){
+    h += '<tr>';
+    for(let c=0; c<C; c++){ if(skip.has(r+','+c)) continue; const sp = span[r+','+c], v = (d.rows[r]||[])[c] ?? '';
+      const num = /^[-+]?\d[\d\s,.]*%?$/.test(String(v).trim());
+      h += `<td${sp?` rowspan="${sp[0]}" colspan="${sp[1]}"`:''} class="${r===0?'h':''}${num?' num':''}">${esc(v)}</td>`; }
+    h += '</tr>';
+  }
+  return h + `</table></div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
+}
+function fitSafe(){
+  document.querySelectorAll('.safewrap').forEach(w => {
+    const t = w.querySelector('table'); if(!t) return;
+    let fs = w.classList.contains('big') ? 44 : 24; t.style.fontSize = fs + 'px';
+    while(fs > 8 && (t.scrollHeight > w.clientHeight + 1 || t.scrollWidth > w.clientWidth + 1)){ fs -= 0.5; t.style.fontSize = fs + 'px'; }
+  });
+}
+function importSafe(){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls,.xlsm,.csv';
+  inp.onchange = async () => {
+    const f = inp.files[0]; if(!f) return;
+    try{
+      const XLSX = await loadXLSX(); const wb = XLSX.read(await f.arrayBuffer(), { type:'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      let rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false, blankrows:true });
+      const rg = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : { s:{r:0,c:0} };
+      // хоосон мөр/баганыг захаас нь тайрах
+      const has = r => (r||[]).some(v => String(v).trim() !== '');
+      let r0 = 0; while(r0 < rows.length && !has(rows[r0])) r0++;
+      let r1 = rows.length - 1; while(r1 > r0 && !has(rows[r1])) r1--;
+      rows = rows.slice(r0, r1 + 1);
+      let c0 = Infinity, c1 = 0; rows.forEach(r => r.forEach((v,i) => { if(String(v).trim() !== ''){ c0 = Math.min(c0, i); c1 = Math.max(c1, i); } }));
+      if(!rows.length || c0 === Infinity){ toast('Хүснэгт хоосон байна', true); return; }
+      rows = rows.map(r => { const a = r.slice(c0, c1 + 1); while(a.length < c1 - c0 + 1) a.push(''); return a.map(v => String(v).trim()); });
+      const off = { r: rg.s.r + r0, c: rg.s.c + c0 };
+      const merges = (ws['!merges'] || []).map(m => ({ s:{ r:m.s.r - off.r, c:m.s.c - off.c }, e:{ r:m.e.r - off.r, c:m.e.c - off.c } }))
+        .filter(m => m.s.r >= 0 && m.s.c >= 0 && m.e.r < rows.length && m.e.c <= c1 - c0)
+        .map(m => ({ s:m.s, e:{ r:Math.min(m.e.r, rows.length-1), c:Math.min(m.e.c, c1-c0) } }));
+      if(rows.length > 80 || rows[0].length > 30){ toast('Хүснэгт хэт том байна (80 мөр, 30 баганаас ихгүй)', true); return; }
+      const d = getDoc(SK('safeday'), () => ({})); d.rows = rows; d.merges = merges; d.src = f.name; d.at = ymd(new Date());
+      commit(SK('safeday')); toast(`Safeday: ${rows.length} мөр оруулсан`);
+    }catch(err){ console.warn(err); toast(err.message || 'Файл уншиж чадсангүй', true); }
+  };
+  inp.click();
 }
 // Энэ 7 хоногт од авсан хүмүүсийн жагсаалт (их одтой нь эхэнд)
 function topStarsHTML(){
@@ -1027,6 +1089,7 @@ function render(){
   const map = { dash:viewDash, prio:()=>viewCal('prio','1','Чухалчлах'), qual:()=>viewCal('qual','2','Чанар'), meet:viewMeet, grid:viewGrid, risk:viewRisk, people:viewPeople, sched:viewSched, map:viewMap, set:viewSet };
   v.innerHTML = (map[S.tab] || viewDash)();
   if(S.zoom) renderZoom();
+  requestAnimationFrame(fitSafe);
   // ink mounts
   const w = curWeek();
   const mm = $('#inkMeetMini'); if(mm) inks.push(new Ink(mm, () => curWeek().meeting.ink, false));
@@ -1056,7 +1119,7 @@ function fitGrid(){
   });
 }
 let fitT = null; let fitRO; const refit = () => { clearTimeout(fitT); fitT = setTimeout(fitGrid, 60); };
-window.addEventListener('resize', refit);
+window.addEventListener('resize', refit); window.addEventListener('resize', () => requestAnimationFrame(fitSafe));
 fitRO = new ResizeObserver(refit);
 document.fonts?.ready?.then(refit);
 
@@ -1460,7 +1523,7 @@ document.addEventListener('click', e => {
   if(d.close){ closeModal(); return; }
   if(d.shift){ if(S.shift !== d.shift){ S.shift = d.shift; localStorage.setItem('lif:shift', S.shift); history.replaceState(null, '', '#' + S.shift); S.gridDraw = false; render(); toast(S.shift === 'night' ? '☾ Шөнийн ээлжийн самбар' : '☀ Өдрийн ээлжийн самбар'); } return; }
   if(d.tab){ S.tab = d.tab; localStorage.setItem('lif:tab', S.tab); render(); $('#view').scrollTop = 0; return; }
-  if(!S.edit && (d.tupl||d.tuplrm||d.wladd||d.wlrm||d.photo||d.gdraw||d.gximp||d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
+  if(!S.edit && (d.safeimp||d.tupl||d.tuplrm||d.wladd||d.wlrm||d.photo||d.gdraw||d.gximp||d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
   if(d.cal){ const m = curMonth(), o = m[d.cal] = m[d.cal]||{}; o[d.day] = ({'':'g', g:'r', r:''})[o[d.day]||'']; if(!o[d.day]) delete o[d.day]; commit(mkey()); return; }
   if(d.slot){ const [code, dy, r] = d.slot.split('|'); const day = dy === 'w' ? 'w' : +dy; if(longPressed){ longPressed = false; return; }
     const e2 = ((curWeek().grid[code]||{})[day]||[])[+r];
@@ -1487,6 +1550,7 @@ document.addEventListener('click', e => {
   if(d.gdraw){ S.gridDraw = !S.gridDraw; if(S.gridDraw){ S.pen.mode = 'pen'; if(!['#1d1d1b','#dc2626','#16a34a'].includes(S.pen.color)) S.pen.color = '#1d1d1b'; } render(); return; }
   if(d.gximp){ importWeekExcel(); return; }
   if(d.gxexp){ exportWeekExcel(); return; }
+  if(d.safeimp){ importSafe(); return; }
   if(d.zoom){ openZoom(d.zoom); return; }
   if(d.zclose){ S.zoom = null; renderZoom(); return; }
   if(d.zs !== undefined){ S.zs = d.zs === '0' ? 1 : Math.max(1, Math.min(4, S.zs + (+d.zs) * 0.5)); renderZoom(); return; }
