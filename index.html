@@ -284,6 +284,22 @@ body.night .slotb.blank .plus{color:#a9c4d8}
 .safet td.num{font-weight:900;font-variant-numeric:tabular-nums}
 .safesrc{flex:none;font-size:.7rem;color:var(--mut);text-align:right;margin-top:.2rem}
 #zoomov .zside .safewrap{height:100%}
+.sfhead{display:flex;justify-content:space-between;gap:.5rem;font-size:.85rem;color:var(--mut);padding:.1rem .2rem .35rem;flex:none}
+.sfhead b{color:var(--ink)}
+.sflist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:.3rem}
+.sfr{display:flex;align-items:center;gap:.5rem;padding:.3rem .5rem;border:1px solid var(--line);border-radius:.6rem;background:#fff;flex:none}
+.sfr .rk{width:1.8rem;text-align:center;font-weight:900;font-size:.95rem;flex:none}
+.sfr .i{flex:1;min-width:0} .sfr b{display:block;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .sfr small{display:block;font-size:.72rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sfr .bar{width:22%;height:.5rem;background:#eee8d6;border-radius:1rem;overflow:hidden;flex:none} .sfr .bar i{display:block;height:100%;background:var(--y);border-radius:1rem}
+.sfr .nn{font-size:1.25rem;font-weight:900;min-width:2.2rem;text-align:right;font-variant-numeric:tabular-nums}
+.sfr.z{opacity:.45} .sfr.z .bar{visibility:hidden}
+.sfr.win{border-width:2px} .sfr.win .rk{font-size:1.4rem}
+.sfr.t1{background:linear-gradient(90deg,#fff3c4,#fff);border-color:#e0a800;box-shadow:0 0 0 2px rgba(224,168,0,.15)} .sfr.t1 .nn{color:#b45309;font-size:1.5rem}
+.sfr.t2{background:linear-gradient(90deg,#eef1f5,#fff);border-color:#a3acb9} .sfr.t3{background:linear-gradient(90deg,#fbe9dc,#fff);border-color:#d08b5b}
+.sfr.t1 .bar i{background:#e0a800} .sfr.t2 .bar i{background:#94a3b8} .sfr.t3 .bar i{background:#d08b5b}
+.sflist.big{display:grid;grid-template-columns:repeat(auto-fill,minmax(44rem,1fr));align-content:start;gap:.5rem}
+.sflist.big .sfr{padding:.6rem .8rem} .sflist.big .sfr b{font-size:1.3rem} .sflist.big .sfr small{font-size:.95rem} .sflist.big .nn{font-size:2rem}
+body.night .sfr .bar{background:#dbe9f3}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -905,6 +921,7 @@ function viewDash(){
 const safeDoc = () => peek(SK('safeday'), () => ({}));
 function safeHTML(big){
   const d = safeDoc();
+  if(Array.isArray(d.list)) return safeListHTML(d, big);
   if(!d.rows || !d.rows.length) return `<div class="empty" style="height:100%"><div><b>Safeday хүснэгт оруулаагүй</b>${S.edit ? 'Excel файлаа “⬆ Excel” товчоор оруулна' : ''}</div></div>`;
   const R = d.rows.length, C = Math.max(...d.rows.map(r => r.length)), skip = new Set(), span = {};
   for(const m of d.merges || []){ span[m.s.r+','+m.s.c] = [m.e.r-m.s.r+1, m.e.c-m.s.c+1]; for(let r=m.s.r; r<=m.e.r; r++) for(let c=m.s.c; c<=m.e.c; c++) if(r!==m.s.r || c!==m.s.c) skip.add(r+','+c); }
@@ -917,6 +934,23 @@ function safeHTML(big){
     h += '</tr>';
   }
   return h + `</table></div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
+}
+// Бүтэцтэй Safeday: нэр + зураг + ярилцлагын тоо, ихээс бага руу
+function safeListHTML(d, big){
+  const rows = d.list.slice().sort((a,b) => (b.n||0) - (a.n||0) || a.name.localeCompare(b.name));
+  if(!rows.length) return `<div class="empty" style="height:100%"><div><b>${S.shift==='night'?'Шөнийн':'Өдрийн'} ээлжийн мэдээлэл алга</b></div></div>`;
+  const max = rows[0].n || 0, tot = rows.reduce((t,r) => t + (r.n||0), 0), act = rows.filter(r => r.n > 0).length;
+  const medal = ['🥇','🥈','🥉'];
+  let rank = 0, prev = null;
+  const items = rows.map((r, i) => {
+    if(r.n !== prev){ rank = i + 1; prev = r.n; }
+    const f = (featDoc().list||[]).find(x => normName(x.name) === normName(r.name));
+    const p = personByName(r.name) || { name:r.name }; const role = r.role || f?.role || p.role || '';
+    const top = r.n > 0 && rank <= 3;
+    return `<div class="sfr ${top?'win t'+rank:''} ${r.n>0?'':'z'}"><span class="rk">${top ? medal[rank-1] : (r.n>0 ? rank : '')}</span>${avatar(p, big?'lg':'')}<div class="i"><b>${esc(r.name)}</b><small>${esc(role)}</small></div>
+      <div class="bar"><i style="width:${max ? Math.round((r.n||0)*100/max) : 0}%"></i></div><span class="nn">${r.n||0}</span></div>`;
+  }).join('');
+  return `<div class="sfhead"><span>${S.shift==='night'?'☾ Шөнө':'☀ Өдөр'} · <b>${act}</b> хүн ярилцлага хийсэн</span><span>Нийт <b>${tot}</b></span></div><div class="sflist ${big?'big':''}">${items}</div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
 }
 function fitSafe(){
   document.querySelectorAll('.safewrap').forEach(w => {
@@ -946,6 +980,28 @@ function importSafe(){
       const merges = (ws['!merges'] || []).map(m => ({ s:{ r:m.s.r - off.r, c:m.s.c - off.c }, e:{ r:m.e.r - off.r, c:m.e.c - off.c } }))
         .filter(m => m.s.r >= 0 && m.s.c >= 0 && m.e.r < rows.length && m.e.c <= c1 - c0)
         .map(m => ({ s:m.s, e:{ r:Math.min(m.e.r, rows.length-1), c:Math.min(m.e.c, c1-c0) } }));
+      // Бүтэцтэй хүснэгт: DS/NS (ээлж) · Нэр · Албан тушаал · Ярилцлага хийсэн тоо
+      const hi = rows.findIndex(r => r.some(v => /нэр|name/i.test(v)) && r.some(v => /ярилцлага|тоо|count|interview/i.test(v)));
+      if(hi >= 0){
+        const H = rows[hi].map(v => v.toLowerCase());
+        const ci = re => H.findIndex(v => re.test(v));
+        const cS = ci(/ds|ns|ээлж|shift/), cR = ci(/албан|тушаал|position|title/), cN = ci(/ярилцлага|тоо|count|interview/);
+        const cName = H.findIndex((v,i) => /нэр|name/.test(v) && i !== cR && i !== cN);
+        const day = [], night = [];
+        for(const r of rows.slice(hi+1)){
+          const name = (r[cName]||'').trim(); if(!name || /^(нийт|total)/i.test(name)) continue;
+          const n = parseInt(String(r[cN]||'').replace(/[^\d]/g,''), 10) || 0;
+          const sh = cS >= 0 ? String(r[cS]||'') : '';
+          const it = { name, role:(cR >= 0 ? r[cR] : '') || '', n };
+          if(/шөнө|ns|night|shono/i.test(sh)) night.push(it); else day.push(it);
+        }
+        const at = ymd(new Date());
+        const dd = getDoc('safeday', () => ({})); Object.keys(dd).forEach(k => delete dd[k]); Object.assign(dd, { list:day, src:f.name, at });
+        const nd = getDoc('n:safeday', () => ({})); Object.keys(nd).forEach(k => delete nd[k]); Object.assign(nd, { list:night, src:f.name, at });
+        commit('safeday', {noRender:true}); commit('n:safeday');
+        toast(`Safeday: ☀ өдөр ${day.length} · ☾ шөнө ${night.length} хүн`);
+        return;
+      }
       if(rows.length > 80 || rows[0].length > 30){ toast('Хүснэгт хэт том байна (80 мөр, 30 баганаас ихгүй)', true); return; }
       const d = getDoc(SK('safeday'), () => ({})); d.rows = rows; d.merges = merges; d.src = f.name; d.at = ymd(new Date());
       commit(SK('safeday')); toast(`Safeday: ${rows.length} мөр оруулсан`);
