@@ -944,7 +944,9 @@ function safeHTML(big){
 // 4 Мэдээлэл хүснэгтэд энэ 7 хоногт хэн хэдэн удаа (сэдэв) гарсныг тоолох
 function gridTopicCounts(){
   const out = {}; // normName → {name, n}
-  for(const t of Object.values(curWeek().grid || {})) for(const arr of Object.values(t)) for(const e of arr || []) if(e && e.name){ const k = normName(e.name); (out[k] = out[k] || { name:e.name, n:0 }).n++; }
+  // Safeday-д зөвхөн SI, PTHA, SL гурвын сэдэв тоологдоно
+  const SAFE_CODES = ['SI', 'PTHA', 'SL'];
+  for(const [code, t] of Object.entries(curWeek().grid || {})) if(SAFE_CODES.includes(code)) for(const arr of Object.values(t)) for(const e of arr || []) if(e && e.name){ const k = normName(e.name); (out[k] = out[k] || { name:e.name, n:0 }).n++; }
   return out;
 }
 function safeListHTML(d, big){
@@ -966,7 +968,7 @@ function safeListHTML(d, big){
     return `<div class="sfr ${r.n>0||r.t>0?'':'z'}"><span class="rk">${r.n>0 ? rank : ''}</span>${avatar(p, big?'lg':'')}<div class="i"><b>${esc(r.name)}</b><small>${esc(role)}</small></div>
       <div class="bar ${cls}" title="Safeday-д оруулсан / 4 Мэдээлэл дэх сэдэв"><i style="width:${pct}%"></i></div><span class="nn ${cls}">${r.n||0}<em>/ ${r.t||0}</em></span></div>`;
   }).join('');
-  return `<div class="sfhead"><span>${S.shift==='night'?'☾ Шөнө':'☀ Өдөр'} · <b>${act}</b> хүн оруулсан</span><span>Оруулсан <b>${tot}</b> / сэдэв <b>${totT}</b></span></div><div class="sfcap"><span>Нэр</span><span>Safeday оруулсан / авсан сэдэв</span></div><div class="sflist ${big?'big':''}">${items}</div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
+  return `<div class="sfhead"><span>${S.shift==='night'?'☾ Шөнө':'☀ Өдөр'} · <b>${act}</b> хүн оруулсан</span><span>Оруулсан <b>${tot}</b> / сэдэв <b>${totT}</b></span></div><div class="sfcap"><span>Нэр</span><span>Safeday оруулсан / авсан сэдэв (SI·PTHA·SL)</span></div><div class="sflist ${big?'big':''}">${items}</div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
 }
 function fitSafe(){
   document.querySelectorAll('.safewrap').forEach(w => {
