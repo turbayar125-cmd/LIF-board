@@ -71,8 +71,10 @@ main{flex:1;min-height:0;padding:.7rem;overflow:auto}
 .dash .kpis{grid-column:1/-1}
 .colL,.colR,.colC{display:flex;flex-direction:column;gap:.6rem;min-height:0}
 .cals{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;flex:none}
-.rtop{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;flex:1;min-height:12rem}
-.mapdash{flex:none} .mapdash .pb{padding:.4rem;overflow:visible} .mapdash .mapbox{max-height:none}
+.rtop{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;height:34%;flex:none}
+.mapdash{flex:1;min-height:0} .mapdash .pb{padding:0;overflow:hidden;position:relative}
+.mapblur{position:absolute;inset:-1.5rem;background-size:cover;background-position:center;filter:blur(14px) brightness(.85) saturate(1.1);transform:scale(1.05)}
+.mapdash .mapfit{position:relative;padding:.4rem}
 .grow{flex:1;min-height:0}
 
 .kpis{display:flex;gap:.6rem;align-items:stretch}
@@ -822,7 +824,7 @@ function viewDash(){
         ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:4rem"></div>`, {head:'meet'})}
         ${panel('5','Эрсдэл', (peek(dkey(), ()=>({})).risk ? `<div class="mtext risk">${esc(peek(dkey(), ()=>({})).risk)}</div>` : '') + risksHTML(true), {head:'risk'})}
       </div>
-      ${panel('8','Field Map', mapHTML(true), {cls:'mapdash', more:'map'})}
+      ${panel('8','Field Map', (peek('mapbg', ()=>({})).img ? `<div class="mapblur" style="background-image:url('${peek('mapbg', ()=>({})).img}')"></div>` : '') + `<div class="mapfit">${mapHTML(true)}</div>`, {cls:'mapdash', more:'map'})}
     </div>
   </div>`;
 }
