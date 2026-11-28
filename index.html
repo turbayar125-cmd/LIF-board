@@ -232,6 +232,17 @@ body.night .mtext{background:#eef7fd}
 body.night .arch-h{background:#f0f7fc}
 body.night .inkwrap{background:repeating-linear-gradient(#fff 0 2.3rem,#dbe9f3 2.3rem calc(2.3rem + 1px))}
 body.night .slotb.blank .plus{color:#a9c4d8}
+.eg2 td.wkband{padding:0!important;border-top:0!important}
+.eg2 td.wkband .wkgrid>div{padding:.22rem .4rem}
+.eg2 td.wkband .wkgrid>div+div{border-left:1px solid var(--line2)}
+.eg2 td.wkrow{padding:0;height:var(--rh,2.9rem);border:1px solid var(--line2);background:#fff}
+.wkgrid{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;height:100%}
+.wkc{display:flex;min-width:0;height:var(--rh,2.9rem)}
+.wkc+.wkc{border-left:1px solid var(--line2)}
+.wkc .slotb{flex:1;min-width:0}
+.ckw{width:2.3rem;flex:none;border-left:1px solid var(--line2);display:flex;flex-direction:column}
+.big-grid .ckw{width:3rem} .dash .ckw{width:1.9rem}
+.eg2 tr.band small.wk1{font-size:.7rem;font-weight:700;color:var(--mut);margin-left:.3rem}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -315,7 +326,7 @@ textarea.inp{height:auto;padding:.6rem .8rem}
 .row{display:flex;gap:.6rem;align-items:center}
 .set-sec{background:#fff;border:1px solid var(--line);border-radius:.7rem;padding:1rem;margin-bottom:.8rem}
 .set-sec h3{margin:0 0 .7rem;font-size:1.15rem}
-.typerow{display:grid;grid-template-columns:7rem 1fr 4rem 5rem 7rem;gap:.5rem;align-items:center;margin-bottom:.4rem}
+.typerow{display:grid;grid-template-columns:7rem 1fr 4rem 9rem 5rem 7rem;gap:.5rem;align-items:center;margin-bottom:.4rem}
 .typerow input[type=color]{width:4rem;height:2.8rem;border:1px solid var(--line2);border-radius:.5rem;padding:.15rem;background:#fff}
 .note{font-size:.9rem;color:var(--mut);line-height:1.45}
 code{background:#f4f0e3;padding:.1rem .35rem;border-radius:.3rem;font-size:.9em}
@@ -442,6 +453,15 @@ function commit(key, {noRender} = {}){
   if(!noRender) render();
 }
 const settings = () => { const s = getDoc('settings', defSettings); if(!s.types) s.types = DEFAULT_TYPES.map(t=>({...t})); if(!s.leaders) s.leaders=[]; if(!s.extraPeople) s.extraPeople=[]; if(!s._v2){ s.types.forEach(t => { if(t.slots === undefined) t.slots = t.code === 'SI' ? 2 : 1; }); s._v2 = 1; } return s; };
+
+// Ээлж бүрийн engagement төрлүүд (шөнө: SI 1 хүн, Green Hat байхгүй, Coach/Trainee 7 хоногт 1)
+function typesFor(){
+  const st = settings();
+  if(S.shift !== 'night') return st.types;
+  if(!Array.isArray(st.nightTypes)) st.nightTypes = st.types.filter(t => t.code !== 'GH').map(t => ({ ...t, slots:1, freq: (t.code === 'CP' || t.code === 'TP') ? 'week' : 'day' }));
+  return st.nightTypes;
+}
+const dayLabel = day => day === 'w' ? '7 хоногт 1' : DOWL[weekDays(S.date)[day].getDay()];
 
 /* ================= week / month keys ================= */
 function weekStartDate(d){ const ws = settings().weekStart ?? 6; const diff = (d.getDay() - ws + 7) % 7; const x = addDays(d, -diff); x.setHours(0,0,0,0); return x; }
@@ -657,19 +677,28 @@ function gridHTML(){
   let h = `<table class="eg2"><colgroup>${ds.map(()=>'<col><col class="ckc">').join('')}</colgroup><thead><tr>`;
   h += ds.map(d => `<th colspan="2" class="${ymd(d)===today?'today':''}">${DOWL[d.getDay()]} <small>${S.tab==='dash'?'':DEN[d.getDay()]+' · '}${d.getMonth()+1}/${d.getDate()}</small></th>`).join('');
   h += '</tr></thead><tbody>';
-  for(const t of st.types){
+  const TT = typesFor();
+  const cellHTML = (t, day, r, e, td, span) => {
+    const ref = `${esc(t.code)}|${day}|${r}`; if(e && e.name) slotSt(e);
+    const pp = e && e.name ? personByName(e.name) : null;
+    return `<td class="nm${td}" ${span?`colspan="${span}"`:''}><button class="slotb ${e&&e.name?'':'blank'}" data-slot="${ref}">${e && e.name ? `${pp?.photo?`<img class="av sm" src="${esc(pp.photo)}" alt="">`:''}<span class="tx" title="${esc(e.name)}">${esc(sn(e.name))}</span>${e.note?'<span class="nt" title="Тэмдэглэлтэй">✎</span>':''}` : (S.edit?'<span class="plus">+</span>':'')}</button></td>`
+      + `<td class="ck${td}"><button class="ckb ${e?.a||''}" data-ck="${ref}|a" aria-label="1-р тэмдэглэгээ">${e?.a==='ok'?'✓':e?.a==='miss'?'✗':''}</button><button class="ckb ${e?.b||''}" data-ck="${ref}|b" aria-label="2-р тэмдэглэгээ">${e?.b==='ok'?'✓':e?.b==='miss'?'✗':''}</button></td>`;
+  };
+  for(let ti=0; ti<TT.length; ti++){
+    const t = TT[ti];
+    if(t.freq === 'week'){
+      // дараалсан 7 хоногийн төрлүүдийг нэг мөрөнд зэрэгцүүлнэ (2 хүртэл)
+      const grp = [t]; if(TT[ti+1]?.freq === 'week'){ grp.push(TT[ti+1]); ti++; }
+      h += `<tr class="band"><td colspan="14" class="wkband"><div class="wkgrid">${grp.map(g => `<div style="border-top:2px solid ${esc(g.color)}">${esc(g.name)} <small class="wk1">7 хоногт 1</small></div>`).join('')}</div></td></tr>`;
+      h += `<tr class="slot"><td colspan="14" class="wkrow"><div class="wkgrid">${grp.map(g => { const e = (((w.grid[g.code]||{}).w)||[])[0], ref = `${esc(g.code)}|w|0`; if(e && e.name) slotSt(e); const pp = e && e.name ? personByName(e.name) : null;
+        return `<div class="wkc"><button class="slotb ${e&&e.name?'':'blank'}" data-slot="${ref}">${e && e.name ? `${pp?.photo?`<img class="av sm" src="${esc(pp.photo)}" alt="">`:''}<span class="tx" title="${esc(e.name)}">${esc(sn(e.name))}</span>${e.note?'<span class="nt">✎</span>':''}` : (S.edit?'<span class="plus">+</span>':'')}</button><div class="ckw"><button class="ckb ${e?.a||''}" data-ck="${ref}|a">${e?.a==='ok'?'✓':e?.a==='miss'?'✗':''}</button><button class="ckb ${e?.b||''}" data-ck="${ref}|b">${e?.b==='ok'?'✓':e?.b==='miss'?'✗':''}</button></div></div>`; }).join('')}</div></td></tr>`;
+      continue;
+    }
     const n = rowsFor(w, t);
     h += `<tr class="band"><td colspan="14" style="border-top:2px solid ${esc(t.color)}">${esc(t.name)}</td></tr>`;
     for(let r=0; r<n; r++){
       h += '<tr class="slot">';
-      ds.forEach((d,i) => {
-        const e = ((w.grid[t.code]||{})[i]||[])[r]; const td = ymd(d)===today ? ' today' : '';
-        const ref = `${esc(t.code)}|${i}|${r}`;
-        if(e && e.name) slotSt(e);
-        const pp = e && e.name ? personByName(e.name) : null;
-        h += `<td class="nm${td}"><button class="slotb ${e&&e.name?'':'blank'}" data-slot="${ref}">${e && e.name ? `${pp?.photo?`<img class="av sm" src="${esc(pp.photo)}" alt="">`:''}<span class="tx" title="${esc(e.name)}">${esc(sn(e.name))}</span>${e.note?'<span class="nt" title="Тэмдэглэлтэй">✎</span>':''}` : (S.edit?'<span class="plus">+</span>':'')}</button></td>`;
-        h += `<td class="ck${td}"><button class="ckb ${e?.a||''}" data-ck="${ref}|a" aria-label="1-р тэмдэглэгээ">${e?.a==='ok'?'✓':e?.a==='miss'?'✗':''}</button><button class="ckb ${e?.b||''}" data-ck="${ref}|b" aria-label="2-р тэмдэглэгээ">${e?.b==='ok'?'✓':e?.b==='miss'?'✗':''}</button></td>`;
-      });
+      ds.forEach((d,i) => { h += cellHTML(t, i, r, ((w.grid[t.code]||{})[i]||[])[r], ymd(d)===today ? ' today' : ''); });
       h += '</tr>';
     }
   }
@@ -711,7 +740,7 @@ function imgDocHTML(key, emptyTitle, emptyText){
 }
 
 function mapHTML(mini){
-  const bg = peek('mapbg', ()=>({})).img, w = curWeek(), types = settings().types;
+  const bg = peek('mapbg', ()=>({})).img, w = curWeek(), types = typesFor();
   const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
   return `<div class="mapbox ${mini?'mapmini':''}" id="${mini?'mapMini':'mapMain'}">${bg?`<img src="${bg}" alt="">`:`<div class="empty" style="position:absolute;inset:0;border:0"><div><b>Талбайн зураг оруулаагүй</b>${mini?'':'Доорх “Талбайн зураг солих” товчоор оруулна'}</div></div>`}<canvas></canvas>${(w.map.markers||[]).map(m => `<span class="mk" data-mk="${m.id}" style="left:${m.x*100}%;top:${m.y*100}%;background:${col(m.c)}">${esc(m.c)}</span>`).join('')}</div>`;
 }
@@ -772,7 +801,7 @@ function viewMeet(){
 }
 function inkTools(markers){
   const pens = ['#1d1d1b','#dc2626','#16a34a','#2563eb','#ea580c'];
-  const types = settings().types;
+  const types = typesFor();
   if(!S.edit) return `<div class="note" style="margin-bottom:.5rem">Засахын тулд дээд талын “Харах горим”-ыг “Засах горим” болгоно.</div>`;
   return `<div class="tools" style="margin-bottom:.6rem">
     ${markers ? types.map(t => `<button class="tool ${S.pen.mode==='marker'&&S.pen.marker===t.code?'sel':''}" style="background:${esc(t.color)}" data-marker="${esc(t.code)}">${esc(t.code)}</button>`).join('') + '<span style="width:.6rem"></span>' : ''}
@@ -794,7 +823,7 @@ function viewRisk(){
     ${panel('', 'Зураг / QR', imgDocHTML('riskimg', 'Зураг оруулаагүй', 'QR код, зурагт хуудас г.м.') + (S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn" data-upimg="riskimg">Зураг оруулах</button><button class="btn danger" data-rmimg="riskimg">Устгах</button></div>`:''), {cls:'full'})}</div>`;
 }
 function viewPeople(){
-  const st = weekStats(curWeek()), fav = new Set(curWeek().featured||[]), types = settings().types;
+  const st = weekStats(curWeek()), fav = new Set(curWeek().featured||[]), types = typesFor();
   const q = (S.pq||'').toLowerCase(), dept = S.pdept||'';
   const fl = featuredPeople(); const mode = S.pmode || (fl.length ? 'feat' : 'all');
   const src = mode === 'feat' ? fl : allPeople();
@@ -813,7 +842,7 @@ function viewSched(){
   return panel('7', 'Main Schedule / Хуваарь', `<div style="height:calc(100% - 3.6rem)">${imgDocHTML('schedule','Хуваарийн зураг оруулаагүй','Хуваарийн зураг, PDF-ийн screenshot г.м.')}</div>${S.edit?`<div class="bar" style="margin-top:.6rem"><button class="btn y" data-upimg="schedule">Зураг оруулах / солих</button><button class="btn danger" data-rmimg="schedule">Устгах</button></div>`:''}`, {cls:'full'});
 }
 function viewMap(){
-  const w = curWeek(), types = settings().types;
+  const w = curWeek(), types = typesFor();
   const counts = types.map(t => [t, (w.map.markers||[]).filter(m=>m.c===t.code).length]);
   return `<div class="two" style="grid-template-columns:1fr 17rem">${panel('8','Field Map — энэ долоо хоног', inkTools(true) + `<div class="mapfit" style="height:calc(100% - 3.8rem)">${mapHTML(false)}</div>`, {cls:'full'})}
     ${panel('', 'Тэмдэглэгээ', counts.map(([t,n]) => `<div class="prow"><span class="code tag" style="background:${esc(t.color)};font-size:.9rem">${esc(t.code)}</span><div class="i"><b>${esc(t.name)}</b></div><span class="cnt ${n?'':'z'}">${n}</span></div>`).join('') + `<p class="note">${S.edit?'Дээрх өнгөт товч сонгоод зураг дээр дарахад тэмдэг тавигдана. Арилгагчаар тэмдэг/зураас дээр дарж устгана.':''}</p>${S.edit?`<button class="btn" data-upimg="mapbg" style="width:100%;justify-content:center">Талбайн зураг солих</button>`:''}`, {cls:'full'})}</div>`;
@@ -833,8 +862,9 @@ function viewSet(){
       <div class="cell" style="gap:.4rem">${s.leaders.map(n=>`<button class="pc ok" data-lrm="${esc(n)}"><span class="tx">${esc(n)}</span> <span class="st" style="color:var(--mut)">×</span></button>`).join('')}<button class="btn" data-ladd="1">+ Нэмэх</button></div>
     </div>
     <div class="set-sec"><h3>Engagement төрлүүд</h3>
-      <div class="typerow note" style="margin-bottom:.2rem"><span>Код</span><span>Нэр</span><span>Өнгө</span><span>Мөр</span><span></span></div>
-      ${s.types.map((t,i)=>`<div class="typerow"><input class="inp" data-tcode="${i}" value="${esc(t.code)}" maxlength="6"><input class="inp" data-tname="${i}" value="${esc(t.name)}"><input type="color" data-tcolor="${i}" value="${esc(t.color)}"><input class="inp" type="number" min="1" max="10" data-tslots="${i}" value="${+t.slots||1}"><button class="btn danger" data-tdel="${i}">Устгах</button></div>`).join('')}
+      <div class="typerow note" style="margin-bottom:.2rem"><span>Код</span><span>Нэр</span><span>Өнгө</span><span>Давтамж</span><span>Мөр</span><span></span></div>
+      <p class="note"><b>${S.shift === 'night' ? '☾ Шөнийн' : '☀ Өдрийн'} ээлжийн</b> төрлүүд — нөгөө ээлжийнхийг өөрчлөхдөө дээд талаас ээлжээ солино.</p>
+      ${typesFor().map((t,i)=>`<div class="typerow"><input class="inp" data-tcode="${i}" value="${esc(t.code)}" maxlength="6"><input class="inp" data-tname="${i}" value="${esc(t.name)}"><input type="color" data-tcolor="${i}" value="${esc(t.color)}"><select class="inp" data-tfreq="${i}"><option value="day" ${t.freq!=='week'?'selected':''}>Өдөр бүр</option><option value="week" ${t.freq==='week'?'selected':''}>7 хоногт 1</option></select><input class="inp" type="number" min="1" max="10" data-tslots="${i}" value="${+t.slots||1}" ${t.freq==='week'?'disabled':''}><button class="btn danger" data-tdel="${i}">Устгах</button></div>`).join('')}
       <button class="btn" id="tAdd">+ Төрөл нэмэх</button>
       <p class="note">Код нь Field Map дээрх тэмдэг болно. Кодыг солиход өмнө бичсэн мэдээлэл тухайн код дээрээ үлдэнэ.</p>
     </div>
@@ -995,9 +1025,9 @@ function pickPerson({title, onPick, withStatus, multi}){
 
 function slotMenu(code, day, r){
   const w = curWeek(), arr = (w.grid[code]||{})[day]||[], e = arr[r]; if(!e || !e.name) return;
-  const t = settings().types.find(x=>x.code===code);
+  const t = typesFor().find(x=>x.code===code);
   openModal(`<div class="mh"><h2>${esc(e.name)}</h2><button class="x" data-close="1">×</button></div>
-    <div class="mb"><p class="note">${esc(t?.name||code)} · ${DOWL[weekDays(S.date)[day].getDay()]}</p>
+    <div class="mb"><p class="note">${esc(t?.name||code)} · ${dayLabel(day)}</p>
     <div class="fld"><label>Тэмдэглэл</label><input class="inp" id="smNote" value="${esc(e.note||'')}" placeholder="Сонголттой"></div></div>
     <div class="mf"><button class="btn danger" id="smDel">Нүдийг цэвэрлэх</button><button class="btn" id="smChg">Хүн солих</button><span style="flex:1"></span><button class="btn pri" id="smOk">Хадгалах</button></div>`, 'sm');
   $('#smDel').onclick = () => { arr[r] = null; closeModal(); commit(wkey()); };
@@ -1005,8 +1035,8 @@ function slotMenu(code, day, r){
   $('#smChg').onclick = () => { closeModal(); pickSlot(code, day, r); };
 }
 function pickSlot(code, day, r){
-  const t = settings().types.find(x=>x.code===code);
-  pickPerson({ title:`${t?.name||code} — ${DOWL[weekDays(S.date)[day].getDay()]}`, onPick:name => {
+  const t = typesFor().find(x=>x.code===code);
+  pickPerson({ title:`${t?.name||code} — ${dayLabel(day)}`, onPick:name => {
     const w = curWeek(); w.grid[code] = w.grid[code]||{}; const arr = w.grid[code][day] = w.grid[code][day]||[];
     while(arr.length < r) arr.push(null);
     const old = arr[r]; arr[r] = { id: old?.id || uid(), name, a: old?.a || '', b: old?.b || '', note: old?.note || '' };
@@ -1167,7 +1197,7 @@ function typeOfBand(v, types){
 }
 const markOf = v => { const t = String(v ?? '').trim().toLowerCase(); if(!t) return ''; if(/^(✓|✔|☑|v|√|1|ok|yes|y|тийм|done|g|green)$/.test(t)) return 'ok'; if(/^(✗|✘|x|×|0|no|n|үгүй|r|red)$/.test(t)) return 'miss'; return ''; };
 function parseWeekSheet(XLSX, wb){
-  const types = settings().types, ds = weekDays(S.date);
+  const types = typesFor(), ds = weekDays(S.date);
   for(const sn of wb.SheetNames){
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header:1, defval:'', raw:false });
     // гарчгийн мөр: 3+ өдрийн нэр
@@ -1187,13 +1217,14 @@ function parseWeekSheet(XLSX, wb){
       for(let r=b.r+1; r<end; r+=2, slot++){
         const top = rows[r]||[], bot = rows[r+1]||[];
         for(const [dw, c] of Object.entries(cols)){
-          const di = idxOf[dw]; if(di === undefined) continue;
+          let di = idxOf[dw]; if(di === undefined) continue; if(b.t.freq === 'week') di = 'w';
           const name = String(top[c] ?? '').trim() || String(bot[c] ?? '').trim();
           if(!name) continue;
           const a = markOf(top[c+1]), bb = markOf(bot[c+1]); if(a) marks++; if(bb) marks++;
           const arr = ((grid[b.t.code] = grid[b.t.code] || {})[di] = (grid[b.t.code] || {})[di] || []);
-          while(arr.length < slot) arr.push(null);
-          arr[slot] = { id:uid(), name, a, b:bb, note:'' }; n++;
+          const sl = di === 'w' ? 0 : slot; if(di === 'w' && arr[0]) continue;
+          while(arr.length < sl) arr.push(null);
+          arr[sl] = { id:uid(), name, a, b:bb, note:'' }; n++;
         }
       }
     });
@@ -1224,17 +1255,17 @@ function importWeekExcel(){
 async function exportWeekExcel(){
   try{
     const XLSX = await loadXLSX();
-    const w = curWeek(), ds = weekDays(S.date), types = settings().types;
+    const w = curWeek(), ds = weekDays(S.date), types = typesFor();
     const DEN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const sym = v => v === 'ok' ? '✓' : v === 'miss' ? '✗' : '';
     const aoa = [], merges = [];
     const head = []; ds.forEach((d,i) => { head.push(`${DEN[d.getDay()]} ${d.getMonth()+1}/${d.getDate()}`, ''); merges.push({ s:{r:0,c:i*2}, e:{r:0,c:i*2+1} }); }); aoa.push(head);
     for(const t of types){
       const r0 = aoa.length; aoa.push([t.name, ...Array(13).fill('')]); merges.push({ s:{r:r0,c:0}, e:{r:r0,c:13} });
-      const n = rowsFor(w, t);
+      const n = t.freq === 'week' ? 1 : rowsFor(w, t);
       for(let k=0; k<n; k++){
         const top = [], bot = [];
-        ds.forEach((d,i) => { const e = ((w.grid[t.code]||{})[i]||[])[k]; top.push(e?.name||'', sym(e?.a)); bot.push('', sym(e?.b)); merges.push({ s:{r:aoa.length,c:i*2}, e:{r:aoa.length+1,c:i*2} }); });
+        ds.forEach((d,i) => { const e = t.freq === 'week' ? (i === 0 && k === 0 ? (((w.grid[t.code]||{}).w)||[])[0] : null) : ((w.grid[t.code]||{})[i]||[])[k]; top.push(e?.name||'', sym(e?.a)); bot.push('', sym(e?.b)); merges.push({ s:{r:aoa.length,c:i*2}, e:{r:aoa.length+1,c:i*2} }); });
         aoa.push(top, bot);
       }
     }
@@ -1276,14 +1307,14 @@ document.addEventListener('click', e => {
   if(d.tab){ S.tab = d.tab; localStorage.setItem('lif:tab', S.tab); render(); $('#view').scrollTop = 0; return; }
   if(!S.edit && (d.wladd||d.wlrm||d.photo||d.gdraw||d.gximp||d.cal||d.slot||d.ck||d.rowadd||d.rowdel||d.star||d.madd||d.mrm||d.rclose||d.rdel)) { toast('“Засах горим” асаана уу'); return; }
   if(d.cal){ const m = curMonth(), o = m[d.cal] = m[d.cal]||{}; o[d.day] = ({'':'g', g:'r', r:''})[o[d.day]||'']; if(!o[d.day]) delete o[d.day]; commit(mkey()); return; }
-  if(d.slot){ const [code, day, r] = d.slot.split('|'); if(longPressed){ longPressed = false; return; }
+  if(d.slot){ const [code, dy, r] = d.slot.split('|'); const day = dy === 'w' ? 'w' : +dy; if(longPressed){ longPressed = false; return; }
     const e2 = ((curWeek().grid[code]||{})[day]||[])[+r];
-    if(e2 && e2.name) slotMenu(code, +day, +r); else pickSlot(code, +day, +r); return; }
+    if(e2 && e2.name) slotMenu(code, day, +r); else pickSlot(code, day, +r); return; }
   if(d.ck){ const [code, day, r, k] = d.ck.split('|'); const e2 = ((curWeek().grid[code]||{})[day]||[])[+r];
     if(!e2 || !e2.name){ toast('Эхлээд нэрээ сонгоно уу'); return; }
     slotSt(e2); e2[k] = ({'':'ok', ok:'miss', miss:''})[e2[k]||'']; commit(wkey()); return; }
-  if(d.rowadd){ const w = curWeek(); w.rows = w.rows||{}; const t2 = settings().types.find(x=>x.code===d.rowadd); w.rows[d.rowadd] = rowsFor(w, t2) + 1; commit(wkey()); return; }
-  if(d.rowdel){ const w = curWeek(), t2 = settings().types.find(x=>x.code===d.rowdel), n = rowsFor(w, t2), g = w.grid[d.rowdel]||{};
+  if(d.rowadd){ const w = curWeek(); w.rows = w.rows||{}; const t2 = typesFor().find(x=>x.code===d.rowadd); w.rows[d.rowadd] = rowsFor(w, t2) + 1; commit(wkey()); return; }
+  if(d.rowdel){ const w = curWeek(), t2 = typesFor().find(x=>x.code===d.rowdel), n = rowsFor(w, t2), g = w.grid[d.rowdel]||{};
     if(Object.values(g).some(arr => arr && arr[n-1] && arr[n-1].name)){ toast('Сүүлийн мөрөнд нэр байна — эхлээд цэвэрлэнэ үү', true); return; }
     Object.values(g).forEach(arr => { if(arr) arr.length = Math.min(arr.length, n-1); }); w.rows = w.rows||{}; w.rows[d.rowdel] = n-1; commit(wkey()); return; }
   if(d.star){ addStar(d.star); return; }
@@ -1324,9 +1355,9 @@ document.addEventListener('click', e => {
   if(d.rdel){ if(!confirm('Эрсдэлийг устгах уу?')) return; const rs = getDoc(SK('risks'), ()=>({list:[]})); rs.list = rs.list.filter(x=>x.id!==d.rdel); commit(SK('risks')); return; }
   if(d.ladd){ pickPerson({ title:'Чиглүүлэгч нэмэх', multi:true, onPick:n => { const s = settings(); if(!s.leaders.includes(n)) s.leaders.push(n); commit('settings', {noRender:true}); S.needRender = true; } }); return; }
   if(d.lrm){ const s = settings(); s.leaders = s.leaders.filter(x=>x!==d.lrm); commit('settings'); return; }
-  if(d.tdel !== undefined){ if(!confirm('Энэ төрлийг устгах уу? (Бичсэн мэдээлэл хадгалагдсан хэвээр үлдэнэ)')) return; settings().types.splice(+d.tdel,1); commit('settings'); return; }
+  if(d.tdel !== undefined){ if(!confirm('Энэ төрлийг устгах уу? (Бичсэн мэдээлэл хадгалагдсан хэвээр үлдэнэ)')) return; typesFor().splice(+d.tdel,1); commit('settings'); return; }
   if(d.exrm !== undefined){ settings().extraPeople.splice(+d.exrm,1); commit('settings'); return; }
-  if(t.id === 'tAdd'){ settings().types.push({ code:'NEW', name:'Шинэ төрөл', color:'#475569' }); commit('settings'); return; }
+  if(t.id === 'tAdd'){ typesFor().push({ code:'NEW', name:'Шинэ төрөл', color:'#475569', slots:1, freq:'day' }); commit('settings'); return; }
   if(t.id === 'logoutB'){ sb.auth.signOut().then(() => { S.user=null; S.cloud=false; S.isAdmin=false; if(channel) sb.removeChannel(channel); renderLoginBtn(); setSync('local'); render(); }); return; }
   if(t.id === 'loginB2'){ loginModal(); return; }
   if(t.id === 'reloadCloud'){ startCloud(); return; }
@@ -1348,7 +1379,7 @@ let lpTimer = null, longPressed = false;
 document.addEventListener('pointerdown', e => {
   const c = e.target.closest('[data-slot]'); if(!c || !S.edit) return;
   longPressed = false;
-  lpTimer = setTimeout(() => { const [code, day, r] = c.dataset.slot.split('|'); const e2 = ((curWeek().grid[code]||{})[day]||[])[+r]; if(e2 && e2.name){ longPressed = true; slotMenu(code, +day, +r); } }, 550);
+  lpTimer = setTimeout(() => { const [code, dy, r] = c.dataset.slot.split('|'); const day = dy === 'w' ? 'w' : +dy; const e2 = ((curWeek().grid[code]||{})[day]||[])[+r]; if(e2 && e2.name){ longPressed = true; slotMenu(code, day, +r); } }, 550);
 });
 ['pointerup','pointercancel','pointermove'].forEach(ev => document.addEventListener(ev, e => { if(ev==='pointermove' && Math.abs(e.movementX)+Math.abs(e.movementY) < 4) return; clearTimeout(lpTimer); }));
 
@@ -1363,10 +1394,11 @@ document.addEventListener('change', e => {
   if(e.target.id === 'setTitle'){ settings().title = e.target.value; commit('settings'); }
   if(e.target.id === 'setPin'){ const v = e.target.value.trim(); if(v && !/^\d{4,8}$/.test(v)){ toast('PIN 4–8 оронтой тоо байна', true); render(); return; } settings().pin = v; commit('settings'); toast(v ? 'PIN шинэчлэгдлээ' : 'PIN унтраалаа'); }
   if(e.target.id === 'setWs'){ settings().weekStart = +e.target.value; commit('settings'); }
-  if(d.tcode !== undefined){ settings().types[+d.tcode].code = e.target.value.trim().toUpperCase() || 'X'; commit('settings'); }
-  if(d.tname !== undefined){ settings().types[+d.tname].name = e.target.value; commit('settings'); }
-  if(d.tslots !== undefined){ settings().types[+d.tslots].slots = Math.max(1, Math.min(10, +e.target.value || 1)); commit('settings'); }
-  if(d.tcolor !== undefined){ settings().types[+d.tcolor].color = e.target.value; commit('settings'); }
+  if(d.tcode !== undefined){ typesFor()[+d.tcode].code = e.target.value.trim().toUpperCase() || 'X'; commit('settings'); }
+  if(d.tname !== undefined){ typesFor()[+d.tname].name = e.target.value; commit('settings'); }
+  if(d.tslots !== undefined){ typesFor()[+d.tslots].slots = Math.max(1, Math.min(10, +e.target.value || 1)); commit('settings'); }
+  if(d.tfreq !== undefined){ typesFor()[+d.tfreq].freq = e.target.value; commit('settings'); }
+  if(d.tcolor !== undefined){ typesFor()[+d.tcolor].color = e.target.value; commit('settings'); }
   if(d.wtext){ const w = curWeek(); w.meeting.text = e.target.value; commit(wkey(), {noRender:true}); }
   if(d.dtext){ const dd = getDoc(dkey(), () => ({})); dd[d.dtext] = e.target.value; commit(dkey(), {noRender:true}); }
   if(d.note){ const m = curMonth(); m.notes = m.notes||{}; m.notes[d.note] = e.target.value; commit(mkey(), {noRender:true}); }
