@@ -258,10 +258,12 @@ body.night .slotb.blank .plus{color:#a9c4d8}
 .topr .i{flex:1;min-width:0} .topr b{display:block;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .topr small{display:block;font-size:.75rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topr.now{border-color:#f59e0b;background:#fffbeb}
 .dash2 .d-top .panel{min-height:0}
+.d-top,.d-map{contain:size}
+.tp .pb{overflow:hidden}
 @media (max-width:900px){.dash2{display:flex;flex-direction:column;height:auto}.d-top{grid-template-columns:1fr}.d-top .panel,.d-feat,.d-grid{min-height:20rem}}
 .tp .pb{display:flex;flex-direction:column;gap:.4rem}
 .tp .tpimg{flex:1;min-height:0;height:auto;cursor:zoom-in}
-.tp .mtext{flex:none}
+.tp .mtext{flex:none} .tp .cell{min-height:0;flex:none}
 #zoomov{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;animation:spFade .2s}
 #zoomov .zh{display:flex;align-items:center;gap:.6rem;padding:.7rem 1rem;background:var(--y);flex:none}
 #zoomov .zh h2{margin:0;font-size:1.5rem;display:flex;align-items:center;gap:.6rem}
@@ -489,9 +491,16 @@ function loadLocal(){
   }
   try{ S.people = JSON.parse(localStorage.getItem('lif:people')||'[]'); }catch(e){}
 }
+// Төхөөрөмж дээрх хадгалалт: IndexedDB (зурагт хязгааргүй) + жижиг өгөгдлийг localStorage-д давхар
+let idbP = null;
+function idb(){ return idbP = idbP || new Promise((ok, no) => { try{ const r = indexedDB.open('lif-board', 1); r.onupgradeneeded = () => r.result.createObjectStore('docs'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }catch(e){ no(e); } }); }
+function idbPut(key, val){ idb().then(db => { const tx = db.transaction('docs', 'readwrite'); tx.objectStore('docs').put(val, key); }).catch(() => {}); }
+function idbAll(){ return idb().then(db => new Promise(ok => { const out = {}, tx = db.transaction('docs', 'readonly'), st = tx.objectStore('docs'); const rq = st.openCursor(); rq.onsuccess = () => { const c = rq.result; if(c){ out[c.key] = c.value; c.continue(); } else ok(out); }; rq.onerror = () => ok(out); })).catch(() => ({})); }
 function saveLocal(key){
-  try{ localStorage.setItem('lifdoc:'+key, JSON.stringify(S.docs[key])); }
-  catch(e){ toast('Төхөөрөмжийн санах ой дүүрсэн — зураг жижигрүүлнэ үү', true); }
+  const v = S.docs[key]; idbPut(key, v);
+  const js = JSON.stringify(v);
+  try{ if(js.length < 150000) localStorage.setItem('lifdoc:'+key, js); else localStorage.removeItem('lifdoc:'+key); }
+  catch(e){ try{ localStorage.removeItem('lifdoc:'+key); }catch(_){} }
 }
 function getDoc(key, def){
   if(!S.docs[key]) S.docs[key] = { data: def(), t: 0 };
@@ -795,8 +804,8 @@ function topBody(k, big){
   if(k === 'sched') return im || `<div class="empty"><div><b>Зураг оруулаагүй</b>${S.edit?'📷 дарж хуваарийн зургаа оруулна':''}</div></div>`;
   if(k === 'meet'){ const m = curWeek().meeting;
     return (m.text ? `<div class="mtext" ${big?'style="max-height:none;font-size:1.3rem"':''}>${esc(m.text)}</div>` : '') + meetingPeopleHTML(true) + (im || (big ? '' : `<div class="inkwrap" id="inkMeetMini" style="flex:1;min-height:3rem"></div>`)); }
-  const dt = peek(dkey(), ()=>({})).risk;
-  const body = (dt ? `<div class="mtext risk" ${big?'style="max-height:none;font-size:1.3rem"':''}>${esc(dt)}</div>` : '') + (risksHTML(!big) || '');
+  const dt = peek(dkey(), ()=>({})).risk, open = (peek(SK('risks'), ()=>({list:[]})).list||[]).some(r => !r.closed);
+  const body = (dt ? `<div class="mtext risk" ${big?'style="max-height:none;font-size:1.3rem"':''}>${esc(dt)}</div>` : '') + (open || big ? (risksHTML(!big) || '') : '');
   return body + im || `<div class="empty"><div><b>Нээлттэй эрсдэл алга</b>${S.edit?'📷 дарж зураг оруулна':''}</div></div>`;
 }
 function openZoom(k){ S.zoom = k; S.zs = 1; renderZoom(); }
@@ -1622,6 +1631,7 @@ setInterval(() => { const n = ymd(new Date()); if(n !== lastDay){ if(ymd(S.date)
 /* ================= boot ================= */
 loadLocal();
 render();
+idbAll().then(all => { let ch = false; for(const [k,v] of Object.entries(all)){ const cur = S.docs[k]; if(v && (!cur || (v.t||0) > (cur.t||0) || (!cur.t && v.t === 0 && JSON.stringify(cur).length < JSON.stringify(v).length))){ S.docs[k] = v; ch = true; } } for(const k of Object.keys(S.docs)) if(!all[k]) idbPut(k, S.docs[k]); if(ch) render(); });
 setSync('local');
 renderLoginBtn();
 if(sb) sb.auth.onAuthStateChange((ev) => { if(ev === 'SIGNED_OUT'){ S.user = null; renderLoginBtn(); } });
