@@ -246,6 +246,19 @@ body.night .slotb.blank .plus{color:#a9c4d8}
 .ckw{width:2.3rem;flex:none;border-left:1px solid var(--line2);display:flex;flex-direction:column}
 .big-grid .ckw{width:3rem} .dash .ckw{width:1.9rem}
 .eg2 tr.band small.wk1{font-size:.7rem;font-weight:700;color:var(--mut);margin-left:.3rem}
+.dash2{display:grid;gap:.6rem;height:100%;grid-template-columns:minmax(16rem,17%) minmax(0,1fr) minmax(22rem,27%);grid-template-rows:auto auto minmax(0,1fr);grid-template-areas:"k k k" "cal top map" "feat grid map"}
+.dash2>.kpis{grid-area:k} .d-cal{grid-area:cal} .d-top{grid-area:top;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;min-height:0}
+.d-feat{grid-area:feat;min-height:0;display:flex} .d-grid{grid-area:grid;min-height:0;display:flex} .d-feat>.panel,.d-grid>.panel{flex:1}
+.d-map{grid-area:map;display:flex;flex-direction:column;gap:.6rem;min-height:0}
+.d-map .mapdash{flex:none} .d-map .mapdash .pb{padding:.4rem} .d-map .mapdash .mapblur{display:none} .d-map .mapdash .mapfit{height:auto;container-type:normal;padding:0} .d-map .mapdash .mapbox{width:100%}
+.tops{display:flex;flex-direction:column;gap:.35rem}
+.topr{display:flex;align-items:center;gap:.55rem;padding:.35rem .5rem;border:1px solid var(--line);border-radius:.6rem;background:#fff}
+.topr .rk{width:1.6rem;height:1.6rem;border-radius:50%;background:var(--y3);display:grid;place-items:center;font-weight:900;font-size:.85rem;flex:none}
+.topr:first-child .rk{background:var(--y);}
+.topr .i{flex:1;min-width:0} .topr b{display:block;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .topr small{display:block;font-size:.75rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topr.now{border-color:#f59e0b;background:#fffbeb}
+.dash2 .d-top .panel{min-height:0}
+@media (max-width:900px){.dash2{display:flex;flex-direction:column;height:auto}.d-top{grid-template-columns:1fr}.d-top .panel,.d-feat,.d-grid{min-height:20rem}}
 /* people */
 .plist{display:flex;flex-direction:column}
 .prow{display:flex;align-items:center;gap:.5rem;padding:.35rem .2rem;border-bottom:1px solid var(--line)}
@@ -812,21 +825,30 @@ function viewDash(){
     <div class="kpi ${crit?'crit':''}"><div class="v">${crit}</div><div class="l">Критик эрсдэл</div></div>
     <div class="leaders"><span class="lt">Чиглүүлэгч</span><div class="ll">${ldrs.length ? ldrs.map(n => { const pp = personByName(n) || {name:n}; return `<div class="ldr">${avatar(pp,'sm')}<div><b>${esc(n)}</b><small>${esc(pp.role||'')}</small></div>${S.edit?`<button class="lx" data-wlrm="${esc(n)}" aria-label="Хасах">×</button>`:''}</div>`; }).join('') : `<span class="note">${S.edit?'“+” дарж энэ долоо хоногийн чиглүүлэгчийг нэмнэ':'—'}</span>`}${S.edit && ldrs.length < 12 ? '<button class="add" data-wladd="1" style="flex:none">+</button>' : ''}</div></div>
   </div>`;
-  return `<div class="dash">${kpis}
-    <div class="colL">
-      <div class="cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {head:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {head:'qual'})}</div>
-      ${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'grow', more:'people', right:'<button class="more" data-sarch="1" title="Өмнөх 7 хоногуудын од">🗂</button>'})}
+  const mbg = peek('mapbg', ()=>({})).img;
+  return `<div class="dash dash2">${kpis}
+    <div class="d-cal cals">${panel('1','Чухалчлах', calHTML('prio')+`<div class="calfoot">${calBadge('prio')}</div>`, {head:'prio'})}${panel('2','Чанар', calHTML('qual')+`<div class="calfoot">${calBadge('qual')}</div>`, {head:'qual'})}</div>
+    <div class="d-top">
+      ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {head:'sched'})}
+      ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:3rem"></div>`, {head:'meet'})}
+      ${panel('5','Эрсдэл', (peek(dkey(), ()=>({})).risk ? `<div class="mtext risk">${esc(peek(dkey(), ()=>({})).risk)}</div>` : '') + risksHTML(true), {head:'risk'})}
     </div>
-    <div class="colC">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridBody(), {cls:'grow', more:'grid', right: gridTools() + `<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
-    <div class="colR">
-      <div class="rtop">
-        ${panel('7','Хуваарь', imgDocHTML('schedule','Зураг оруулаагүй', S.edit?'“7 Хуваарь” цэснээс':''), {head:'sched'})}
-        ${panel('3','Хурал', meetingPeopleHTML() + `<div class="inkwrap" id="inkMeetMini" style="height:calc(100% - 3rem);min-height:4rem"></div>`, {head:'meet'})}
-        ${panel('5','Эрсдэл', (peek(dkey(), ()=>({})).risk ? `<div class="mtext risk">${esc(peek(dkey(), ()=>({})).risk)}</div>` : '') + risksHTML(true), {head:'risk'})}
-      </div>
-      ${panel('8','Field Map', (peek('mapbg', ()=>({})).img ? `<div class="mapblur" style="background-image:url('${peek('mapbg', ()=>({})).img}')"></div>` : '') + `<div class="mapfit">${mapHTML(true)}</div>`, {cls:'mapdash', more:'map'})}
+    <div class="d-feat">${panel('★', `Онцлох ярилцлага${featDoc().list?.length ? ' · '+featDoc().list.length+' хүн' : ''}`, peopleListHTML(), {cls:'full', more:'people', right:'<button class="more" data-sarch="1" title="Өмнөх 7 хоногуудын од">🗂</button>'})}</div>
+    <div class="d-grid">${panel('4','Мэдээлэл — долоо хоногийн engagement', gridBody(), {cls:'full', more:'grid', right: gridTools() + `<span class="chip-s">1-р: <span style="color:var(--ok)">${st.c1.g}✓</span> <span style="color:var(--bad)">${st.c1.r}✗</span> · 2-р: <span style="color:var(--ok)">${st.c2.g}✓</span> <span style="color:var(--bad)">${st.c2.r}✗</span></span>`})}</div>
+    <div class="d-map">
+      ${panel('8','Field Map', (mbg ? `<div class="mapblur" style="background-image:url('${mbg}')"></div>` : '') + `<div class="mapfit">${mapHTML(true)}</div>`, {cls:'mapdash', more:'map'})}
+      ${panel('🏆','Энэ 7 хоногийн шилдгүүд', topStarsHTML(), {cls:'grow', more:'people'})}
     </div>
   </div>`;
+}
+// Энэ 7 хоногт од авсан хүмүүсийн жагсаалт (их одтой нь эхэнд)
+function topStarsHTML(){
+  const wk = weekKey(S.date), today = ymd(new Date()), per = {};
+  for(const e of starLog()) if(starWeek(e) === wk){ const k = normName(e.name); (per[k] = per[k] || { name:e.name, days:new Set() }).days.add(e.date); }
+  const rows = Object.values(per).sort((a,b) => b.days.size - a.days.size || a.name.localeCompare(b.name));
+  if(!rows.length) return `<div class="empty" style="height:100%"><div><b>Энэ 7 хоногт од өгөөгүй</b>Онцлох ярилцлагын ★ дарж од өгнө</div></div>`;
+  return `<div class="tops">${rows.map((r,i) => { const p = personByName(r.name) || { name:r.name }; const f = (featDoc().list||[]).find(x => normName(x.name) === normName(r.name));
+    return `<div class="topr ${r.days.has(today)?'now':''}"><span class="rk">${i+1}</span>${avatar(p)}<div class="i"><b>${esc(r.name)}</b><small>${esc(f?.role || p.role || '')}</small></div><span class="scnt">★ ${r.days.size}</span></div>`; }).join('')}</div>`;
 }
 function viewCal(kind, num, title){
   const c = calCount(curMonth()[kind]);
