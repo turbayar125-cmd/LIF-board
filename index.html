@@ -285,6 +285,28 @@ textarea.inp{height:auto;padding:.6rem .8rem}
 .mapbox>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .mapbox canvas{position:absolute;inset:0;width:100%;height:100%}
 .mk{position:absolute;transform:translate(-50%,-50%);font-weight:900;font-size:1rem;color:#fff;padding:.15rem .4rem;border-radius:.35rem;box-shadow:0 .1rem .3rem rgba(0,0,0,.3);pointer-events:auto;white-space:nowrap;border:2px solid #fff}
+.pin{position:absolute;width:0;height:0;z-index:2;pointer-events:auto;font-size:1.3rem}
+.mapmini .pin{font-size:.7rem;pointer-events:none}
+.pin .ph{position:absolute;left:-1.45em;bottom:.15em;width:2.9em;height:2.9em;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);box-shadow:0 .25em .6em rgba(0,0,0,.45),0 0 0 .18em #fff;display:grid;place-items:center;animation:pinBob 1.6s ease-in-out infinite}
+.pin .pi{transform:rotate(45deg);width:2.25em;height:2.25em;border-radius:50%;overflow:hidden;background:#fff;display:grid;place-items:center}
+.pin .pi img{width:100%;height:100%;object-fit:cover}
+.pin .pi b{font-size:.95em;font-weight:900;color:var(--c)}
+.pin .pr{position:absolute;left:-1.2em;top:-.6em;width:2.4em;height:1.2em;border-radius:50%;border:.22em solid var(--c);opacity:0;animation:pinRing 1.8s ease-out infinite}
+.pin .pr.p2{animation-delay:.6s}.pin .pr.p3{animation-delay:1.2s}
+.pin .pl{position:absolute;left:50%;top:.55em;transform:translateX(-50%);white-space:nowrap;background:rgba(15,23,42,.86);color:#fff;font-weight:800;font-size:.85em;padding:.12em .5em;border-radius:.4em;box-shadow:0 .1em .3em rgba(0,0,0,.3)}
+.pin .pl i{font-style:normal;margin-left:.35em;background:var(--c);border-radius:.25em;padding:0 .3em;font-size:.85em}
+.pin.now .ph{animation:pinBob 1.2s ease-in-out infinite,pinGlow 1s ease-in-out infinite}
+.pin.now .pr{border-width:.3em;animation-duration:1.4s}
+.pin.now .pl{background:var(--c)}
+.pin.now .pl i{background:rgba(0,0,0,.3)}
+@keyframes pinRing{0%{transform:scale(.3);opacity:.95}100%{transform:scale(3.2);opacity:0}}
+@keyframes pinBob{0%,100%{bottom:.15em}50%{bottom:.5em}}
+@keyframes pinGlow{0%,100%{box-shadow:0 .25em .6em rgba(0,0,0,.45),0 0 0 .18em #fff}50%{box-shadow:0 .25em .6em rgba(0,0,0,.45),0 0 0 .18em #fff,0 0 1.4em .5em var(--c)}}
+@media (prefers-reduced-motion:reduce){.pin .ph,.pin .pr{animation:none}}
+.placing{display:flex;align-items:center;gap:.6rem;background:#fef3c7;border:2px solid #f59e0b;border-radius:.6rem;padding:.5rem .8rem;margin-bottom:.6rem;font-size:1.05rem;animation:pinGlowB 1s ease-in-out infinite alternate}
+@keyframes pinGlowB{to{background:#fde68a}}
+.pinrow{width:100%;text-align:left}
+.dotc{width:.8rem;height:.8rem;border-radius:50%;flex:none}
 .mapmini .mk{font-size:.62rem;padding:.05rem .22rem;border-width:1px}
 .mapfit{height:100%;display:flex;align-items:center;justify-content:center}
 .mapfit .mapbox{height:100%;width:auto;max-width:100%}
@@ -742,7 +764,18 @@ function imgDocHTML(key, emptyTitle, emptyText){
 function mapHTML(mini){
   const bg = peek('mapbg', ()=>({})).img, w = curWeek(), types = typesFor();
   const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
-  return `<div class="mapbox ${mini?'mapmini':''}" id="${mini?'mapMini':'mapMain'}">${bg?`<img src="${bg}" alt="">`:`<div class="empty" style="position:absolute;inset:0;border:0"><div><b>Талбайн зураг оруулаагүй</b>${mini?'':'Доорх “Талбайн зураг солих” товчоор оруулна'}</div></div>`}<canvas></canvas>${(w.map.markers||[]).map(m => `<span class="mk" data-mk="${m.id}" style="left:${m.x*100}%;top:${m.y*100}%;background:${col(m.c)}">${esc(m.c)}</span>`).join('')}</div>`;
+  return `<div class="mapbox ${mini?'mapmini':''}" id="${mini?'mapMini':'mapMain'}">${bg?`<img src="${bg}" alt="">`:`<div class="empty" style="position:absolute;inset:0;border:0"><div><b>Талбайн зураг оруулаагүй</b>${mini?'':'Доорх “Талбайн зураг солих” товчоор оруулна'}</div></div>`}<canvas></canvas>${(w.map.markers||[]).map(m => pinHTML(m, col(m.c))).join('')}</div>`;
+}
+// 📍 Ярилцлага хийсэн байршлын pin — анивчдаг
+function pinHTML(m, col){
+  const today = ymd(new Date()), now = m.date === today;
+  const pp = m.name ? (personByName(m.name) || { name:m.name }) : null;
+  const ph = pp ? (pp.photo || photoOf(pp.name)) : '';
+  const head = pp ? (ph ? `<img src="${esc(ph)}" alt="">` : `<b>${esc(initials(firstName(m.name)).toUpperCase().slice(0,2) || '?')}</b>`) : `<b>${esc(m.c)}</b>`;
+  return `<div class="pin ${now?'now':''}" data-mk="${m.id}" style="left:${m.x*100}%;top:${m.y*100}%;--c:${col}">
+    <span class="pr"></span><span class="pr p2"></span><span class="pr p3"></span>
+    <span class="ph"><span class="pi">${head}</span></span>
+    ${m.name ? `<span class="pl">${esc(firstName(m.name))}<i>${esc(m.c)}</i></span>` : ''}</div>`;
 }
 
 /* ================= views ================= */
@@ -844,8 +877,13 @@ function viewSched(){
 function viewMap(){
   const w = curWeek(), types = typesFor();
   const counts = types.map(t => [t, (w.map.markers||[]).filter(m=>m.c===t.code).length]);
-  return `<div class="two" style="grid-template-columns:1fr 17rem">${panel('8','Field Map — энэ долоо хоног', inkTools(true) + `<div class="mapfit" style="height:calc(100% - 3.8rem)">${mapHTML(false)}</div>`, {cls:'full'})}
-    ${panel('', 'Тэмдэглэгээ', counts.map(([t,n]) => `<div class="prow"><span class="code tag" style="background:${esc(t.color)};font-size:.9rem">${esc(t.code)}</span><div class="i"><b>${esc(t.name)}</b></div><span class="cnt ${n?'':'z'}">${n}</span></div>`).join('') + `<p class="note">${S.edit?'Дээрх өнгөт товч сонгоод зураг дээр дарахад тэмдэг тавигдана. Арилгагчаар тэмдэг/зураас дээр дарж устгана.':''}</p>${S.edit?`<button class="btn" data-upimg="mapbg" style="width:100%;justify-content:center">Талбайн зураг солих</button>`:''}`, {cls:'full'})}</div>`;
+  const col = c => (types.find(t=>t.code===c)||{}).color || '#111';
+  const pins = (w.map.markers||[]).filter(m => m.name).slice().sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  const banner = S.placing ? `<div class="placing">📍 <b>${esc(S.placing.name)}</b> — ярилцлага хийсэн байршил дээр нь дарна уу <button class="btn" data-placecancel="1">Болих</button></div>` : '';
+  return `<div class="two" style="grid-template-columns:1fr 19rem">${panel('8','Field Map — ярилцлага хийсэн байршил', banner + inkTools(true) + `<div class="mapfit" style="height:calc(100% - ${S.placing?'7.4rem':'3.8rem'})">${mapHTML(false)}</div>`, {cls:'full'})}
+    ${panel('', `📍 Энэ 7 хоногт (${pins.length})`, counts.map(([t,n]) => `<span class="tag" style="background:${esc(t.color)};font-size:.85rem;margin:0 .25rem .3rem 0;display:inline-block">${esc(t.code)} ${n}</span>`).join('') +
+      (pins.length ? `<div class="plist" style="margin-top:.4rem">${pins.map(m => `<button class="prow pinrow" data-pinfo="${m.id}">${avatar(personByName(m.name) || {name:m.name}, 'sm')}<div class="i"><b>${esc(m.name)}</b><small>${esc(m.c)} · ${esc(m.date||'')}</small></div><span class="dotc" style="background:${col(m.c)}"></span></button>`).join('')}</div>` : `<p class="note">${S.edit?'Өнгөт товч (SI, CRM…) сонгоод зураг дээр дарахад хэн ярилцлага хийснийг асууж, тэр байршилд анивчдаг pin тавина. 4 Мэдээлэл хүснэгтийн нэр дээр дарж “📍 Байршил тэмдэглэх”-ээр ч тавьж болно.':'Pin алга'}</p>`) +
+      `${S.edit?`<button class="btn" data-upimg="mapbg" style="width:100%;justify-content:center;margin-top:.6rem">Талбайн зураг солих</button>`:''}`, {cls:'full'})}</div>`;
 }
 function viewSet(){
   const s = settings();
@@ -949,10 +987,10 @@ class Ink{
   draw(){ this.ctx.clearRect(0,0,this.w,this.h); (this.get()||[]).forEach(s => this.stroke(s)); if(this.cur) this.stroke(this.cur); }
   onDown(e){
     if(!S.edit) return;
-    if(e.target.closest('.mk')) return;
+    if(e.target.closest('.mk,.pin')) return;
     const p = this.pt(e);
     if(this.kind === 'map' && S.pen.mode === 'marker'){
-      const w = curWeek(); w.map.markers.push({ id:uid(), x:p[0], y:p[1], c:S.pen.marker }); commit(wkey()); return;
+      placePin(p[0], p[1]); return;
     }
     if(S.pen.mode === 'erase'){ this.eraseAt(p); return; }
     this.el.setPointerCapture?.(e.pointerId);
@@ -1029,10 +1067,25 @@ function slotMenu(code, day, r){
   openModal(`<div class="mh"><h2>${esc(e.name)}</h2><button class="x" data-close="1">×</button></div>
     <div class="mb"><p class="note">${esc(t?.name||code)} · ${dayLabel(day)}</p>
     <div class="fld"><label>Тэмдэглэл</label><input class="inp" id="smNote" value="${esc(e.note||'')}" placeholder="Сонголттой"></div></div>
-    <div class="mf"><button class="btn danger" id="smDel">Нүдийг цэвэрлэх</button><button class="btn" id="smChg">Хүн солих</button><span style="flex:1"></span><button class="btn pri" id="smOk">Хадгалах</button></div>`, 'sm');
+    <div class="mf"><button class="btn danger" id="smDel">Нүдийг цэвэрлэх</button><button class="btn" id="smChg">Хүн солих</button><button class="btn y" id="smPin">📍 Байршил</button><span style="flex:1"></span><button class="btn pri" id="smOk">Хадгалах</button></div>`, 'sm');
   $('#smDel').onclick = () => { arr[r] = null; closeModal(); commit(wkey()); };
   $('#smOk').onclick = () => { e.note = $('#smNote').value.trim(); closeModal(); commit(wkey()); };
   $('#smChg').onclick = () => { closeModal(); pickSlot(code, day, r); };
+  $('#smPin').onclick = () => { closeModal(); S.placing = { name:e.name, code, date: day === 'w' ? ymd(new Date()) : ymd(weekDays(S.date)[day]) }; S.pen.mode = 'marker'; S.pen.marker = code; S.tab = 'map'; localStorage.setItem('lif:tab','map'); render(); };
+}
+function placePin(x, y){
+  const types = typesFor();
+  if(S.placing){ const pl = S.placing; S.placing = null; curWeek().map.markers.push({ id:uid(), x, y, c:pl.code, name:pl.name, date:pl.date }); commit(wkey()); toast(`📍 ${pl.name} — байршил тэмдэглэгдлээ`); return; }
+  const t = types.find(x => x.code === S.pen.marker) || types[0];
+  pickPerson({ title:`📍 ${t?.name || ''} — хэн ярилцлага хийсэн бэ?`, onPick:name => { curWeek().map.markers.push({ id:uid(), x, y, c:t.code, name, date:ymd(new Date()) }); commit(wkey(), {noRender:true}); S.needRender = true; toast(`📍 ${name}`); } });
+}
+function pinInfo(id){
+  const w = curWeek(), m = (w.map.markers||[]).find(x => x.id === id); if(!m) return;
+  const t = typesFor().find(x => x.code === m.c), pp = personByName(m.name||'') || { name:m.name||m.c };
+  openModal(`<div class="mh"><h2>📍 ${esc(m.name || t?.name || m.c)}</h2><button class="x" data-close="1">×</button></div>
+    <div class="mb" style="display:flex;gap:1rem;align-items:center">${avatar(pp,'lg')}<div><b style="font-size:1.15rem">${esc(m.name||'—')}</b><div class="note">${esc(pp.role||'')}</div><div style="margin-top:.4rem"><span class="tag" style="background:${esc(t?.color||'#333')}">${esc(m.c)}</span> ${esc(t?.name||'')} · ${esc(m.date||'')}</div></div></div>
+    <div class="mf">${S.edit?'<button class="btn danger" id="pinDel">Pin устгах</button>':''}<span style="flex:1"></span><button class="btn pri" data-close="1">Хаах</button></div>`, 'sm');
+  const del = $('#pinDel'); if(del) del.onclick = () => { w.map.markers = w.map.markers.filter(x => x.id !== id); closeModal(); commit(wkey()); };
 }
 function pickSlot(code, day, r){
   const t = typesFor().find(x=>x.code===code);
@@ -1332,6 +1385,8 @@ document.addEventListener('click', e => {
   if(d.gdraw){ S.gridDraw = !S.gridDraw; if(S.gridDraw){ S.pen.mode = 'pen'; if(!['#1d1d1b','#dc2626','#16a34a'].includes(S.pen.color)) S.pen.color = '#1d1d1b'; } render(); return; }
   if(d.gximp){ importWeekExcel(); return; }
   if(d.gxexp){ exportWeekExcel(); return; }
+  if(d.pinfo){ pinInfo(d.pinfo); return; }
+  if(d.placecancel){ S.placing = null; render(); return; }
   if(d.pmode){ S.pmode = d.pmode; render(); return; }
   if(d.featimp){ importFeatured(); return; }
   if(d.feattpl){ featTemplate(); return; }
@@ -1364,10 +1419,10 @@ document.addEventListener('click', e => {
 });
 // map marker erase (pointerdown, so it works over canvas)
 document.addEventListener('pointerdown', e => {
-  const mk = e.target.closest('.mk'); if(!mk || !S.edit || S.tab!=='map') return;
-  if(S.pen.mode === 'erase' || S.pen.mode === 'marker'){ e.preventDefault(); e.stopPropagation();
-    if(S.pen.mode==='marker' && !confirm('Энэ тэмдгийг устгах уу?')) return;
-    const w = curWeek(); w.map.markers = w.map.markers.filter(m => m.id !== mk.dataset.mk); commit(wkey()); }
+  const mk = e.target.closest('.pin'); if(!mk || S.tab!=='map' || !mk.closest('#mapMain')) return;
+  e.preventDefault(); e.stopPropagation();
+  if(S.edit && S.pen.mode === 'erase'){ const w = curWeek(); w.map.markers = w.map.markers.filter(m => m.id !== mk.dataset.mk); commit(wkey()); return; }
+  pinInfo(mk.dataset.mk);
 }, true);
 // mini map / mini ink → open tab
 document.addEventListener('click', e => {
