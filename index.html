@@ -940,14 +940,12 @@ function safeListHTML(d, big){
   const rows = d.list.slice().sort((a,b) => (b.n||0) - (a.n||0) || a.name.localeCompare(b.name));
   if(!rows.length) return `<div class="empty" style="height:100%"><div><b>${S.shift==='night'?'Шөнийн':'Өдрийн'} ээлжийн мэдээлэл алга</b></div></div>`;
   const max = rows[0].n || 0, tot = rows.reduce((t,r) => t + (r.n||0), 0), act = rows.filter(r => r.n > 0).length;
-  const medal = ['🥇','🥈','🥉'];
   let rank = 0, prev = null;
   const items = rows.map((r, i) => {
     if(r.n !== prev){ rank = i + 1; prev = r.n; }
     const f = (featDoc().list||[]).find(x => normName(x.name) === normName(r.name));
     const p = personByName(r.name) || { name:r.name }; const role = r.role || f?.role || p.role || '';
-    const top = r.n > 0 && rank <= 3;
-    return `<div class="sfr ${top?'win t'+rank:''} ${r.n>0?'':'z'}"><span class="rk">${top ? medal[rank-1] : (r.n>0 ? rank : '')}</span>${avatar(p, big?'lg':'')}<div class="i"><b>${esc(r.name)}</b><small>${esc(role)}</small></div>
+    return `<div class="sfr ${r.n>0?'':'z'}"><span class="rk">${r.n>0 ? rank : ''}</span>${avatar(p, big?'lg':'')}<div class="i"><b>${esc(r.name)}</b><small>${esc(role)}</small></div>
       <div class="bar"><i style="width:${max ? Math.round((r.n||0)*100/max) : 0}%"></i></div><span class="nn">${r.n||0}</span></div>`;
   }).join('');
   return `<div class="sfhead"><span>${S.shift==='night'?'☾ Шөнө':'☀ Өдөр'} · <b>${act}</b> хүн ярилцлага хийсэн</span><span>Нийт <b>${tot}</b></span></div><div class="sflist ${big?'big':''}">${items}</div>${d.src ? `<div class="safesrc">${esc(d.src)} · ${esc(d.at||'')}</div>` : ''}`;
