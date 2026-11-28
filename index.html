@@ -1217,9 +1217,11 @@ function addStar(name){
   // өмнө нь нэг өдөрт давхар өгсөн бол цэвэрлэнэ
   const seen = new Set(), before = sd.log.length;
   sd.log = sd.log.filter(x => { const kk = normName(x.name) + '|' + x.date; if(seen.has(kk)) return false; seen.add(kk); return true; });
-  let e = sd.log.find(x => normName(x.name) === k && x.date === today), already = !!e;
-  if(!e){ e = { id:uid(), name, date:today, t:Date.now(), by:S.user?.email || '' }; sd.log.push(e); }
-  if(!already || sd.log.length !== before) commit(SK('stars'));
+  const ex = sd.log.find(x => normName(x.name) === k && x.date === today);
+  // тухайн өдөр аль хэдийн од авсан бол дахин дарахад буцаана
+  if(ex){ sd.log = sd.log.filter(x => x !== ex); commit(SK('stars')); toast(`☆ ${name} — одыг буцаалаа`); return; }
+  const e = { id:uid(), name, date:today, t:Date.now(), by:S.user?.email || '' }, already = false; sd.log.push(e);
+  commit(SK('stars'));
   const f = (featDoc().list||[]).find(x => normName(x.name) === normName(name));
   const m = personByName(name) || { name };
   showStarPop({ name, role: f?.role || m.role || '', dept: f?.dept || m.dept || '', photo: m.photo || photoOf(name) || photoOf(m.name) || '' }, starInfo(name, weekKey(S.date)).n, e.id, already);
